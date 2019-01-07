@@ -6,9 +6,9 @@
 
 #include <uibackend.h>
 #include <uicontroller.h>
-// #include <plcconnection.h>  // !!!tmp
-// #include <configurationmanager.h>  // !!!tmp
-// #include <vscape/jobmanager.h>  // !!!tmp
+#include <plcconnection.h>
+#include <configurationmanager.h>
+#include <vscape/jobmanager.h>
 
 class MainWindow : public QMainWindow
 {
@@ -21,9 +21,12 @@ public:
 private:
     UIController            *m_controller;
     UIBackend               *m_uiBackend;
-    // !!!tmp PLCConnection           *m_plcConnection;
-    // !!!tmp ConfigurationManager    *m_configurationManager;
-    // !!!tmp JobManager              *m_jobManager;
+    PLCConnection           *m_plcConnection;
+    ConfigurationManager    *m_configurationManager;
+    JobManager              *m_jobManager;
+
+    TrainImageProvider      *m_trainImageProvider;
+    BufferImageProvider     *m_bufferImageProvider;
 };
 
 #endif // MAINWINDOW_H

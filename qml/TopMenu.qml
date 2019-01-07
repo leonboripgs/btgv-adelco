@@ -9,9 +9,10 @@ RowLayout {
 
     signal itemSelected(string menuItem)
 
-    spacing: 10
+    spacing: _uimButtonHeight * 0.2
 
     function enabledItem(code) {
+
         if (statusPlcConnected === false) {
             return false;
         }

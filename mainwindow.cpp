@@ -13,8 +13,8 @@ MainWindow::MainWindow(QSettings *settings, QWidget *parent)
     CoInitialize(NULL);
 
     // set initial window size
-    setFixedWidth(800);
-    setFixedHeight(600);
+    setMinimumWidth(1024);
+    setMinimumHeight(768);
 
     // set background color to black
     QPalette Pal(palette());
@@ -28,21 +28,30 @@ MainWindow::MainWindow(QSettings *settings, QWidget *parent)
 
     // prepare the main objects and arbitrator
     // -------------------------------------------------------------------
-    // !!!tmp m_plcConnection = new PLCConnection(settings, this);
-    // !!!tmp m_configurationManager = new ConfigurationManager(settings, this);
-    // !!!tmp m_jobManager = new JobManager(settings, this);
+    m_plcConnection = new PLCConnection(settings, this);
+    m_configurationManager = new ConfigurationManager(settings, this);
+
+    BatchConfiguration* batchConfig = new BatchConfiguration();
+    m_configurationManager->getConfigurationById(configId, batchConfig);
+
+    m_jobManager = new JobManager(settings, this);
+    m_jobManager->setBatchConfiguration(batchConfig);
+
+    m_bufferImageProvider = new BufferImageProvider(this);
+    m_trainImageProvider = new TrainImageProvider(this);
 
     m_controller = new UIController(
                 configId,
-                // !!!tmp m_plcConnection,
-                // !!!tmp m_configurationManager,
-                // !!!tmp m_jobManager,
+                m_plcConnection,
+                m_configurationManager,
+                m_jobManager,
+                m_trainImageProvider,
                 this);
 
-    m_uiBackend = new UIBackend(m_controller, settings);
+    m_uiBackend = new UIBackend(m_controller, settings, m_trainImageProvider, m_bufferImageProvider);
 
-    // !!!tmp connect(m_jobManager, SIGNAL(trainImageAcquired(QPixmap*)), m_uiBackend->getTrainImageProvider(), SLOT(updatePixmap(QPixmap*)));
-    // !!!tmp connect(m_jobManager, SIGNAL(newImage(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(), SLOT(appendPixmap(QPixmap*, bool)));
+    connect(m_jobManager, SIGNAL(trainImageAcquired(QPixmap*)), m_uiBackend->getTrainImageProvider(), SLOT(updatePixmap(QPixmap*)));
+    connect(m_jobManager, SIGNAL(newImage(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(), SLOT(appendPixmap(QPixmap*, bool)));
     // -------------------------------------------------------------------
 
     // setup application close handler
@@ -65,5 +74,12 @@ MainWindow::~MainWindow()
     CoUninitialize();
 
     // delete objects (clean-up)
-    m_uiBackend->deleteLater();
+    m_bufferImageProvider->deleteLater();
+    m_trainImageProvider->deleteLater();
+
+    // m_uiBackend->deleteLater();
+    m_uiBackend->close();
+    delete m_uiBackend;
+
+    delete m_controller; // ->deleteLater();
 }

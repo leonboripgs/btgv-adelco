@@ -1,10 +1,12 @@
 #include "uicontroller.h"
+#include <systemmanager.h>
 
 UIController::UIController(
         QString configId,
-// !!!tmp         PLCConnection *plcConnection,
-// !!!tmp         ConfigurationManager *manager,
-// !!!tmp         JobManager *jobmanager,
+        PLCConnection *plcConnection,
+        ConfigurationManager *manager,
+        JobManager *jobmanager,
+        TrainImageProvider *trainImageProvider,
         QObject *parent) : QObject(parent)
 {
     m_activeConfigurationId = configId;
@@ -12,38 +14,40 @@ UIController::UIController(
     m_plcRunning = false;
     m_plcError = false;
     m_plcWarning = false;
-    // !!!tmp m_plcConnection = plcConnection;
-    // !!!tmp m_configurationManager = manager;
-    // !!!tmp m_jobManager = jobmanager;
+
+    m_trainImageProvider = trainImageProvider;
+    m_plcConnection = plcConnection;
+    m_configurationManager = manager;
+    m_jobManager = jobmanager;
     m_jobReady = false;
 
-    // !!!tmp m_cyclePulses = m_plcConnection->getCyclePulses();
-    // !!!tmp m_triggerOffset = m_plcConnection->getTriggerOffset();
+    m_cyclePulses = m_plcConnection->getCyclePulses();
+    m_triggerOffset = m_plcConnection->getTriggerOffset();
 
     newMessage("Application started");
 
-    // !!!tmp connect(m_plcConnection, SIGNAL(plcConnected()), this, SIGNAL(plcConnect()));
-    // !!!tmp connect(m_plcConnection, SIGNAL(plcDisconnected()), this, SIGNAL(plcDisconnect()));
-    // !!!tmp connect(m_plcConnection, SIGNAL(plcStatus(SystemStatus*)), this, SLOT(onPlcStatus(SystemStatus*)));
+    connect(m_plcConnection, SIGNAL(plcConnected()), this, SIGNAL(plcConnect()));
+    connect(m_plcConnection, SIGNAL(plcDisconnected()), this, SIGNAL(plcDisconnect()));
+    connect(m_plcConnection, SIGNAL(plcStatus(SystemStatus*)), this, SLOT(onPlcStatus(SystemStatus*)));
 
     // connect message signals from all sources
-    // !!!tmp connect(m_plcConnection, SIGNAL(viewMessage(QString)), this, SIGNAL(newMessage(QString)));
-    // !!!tmp connect(m_jobManager, SIGNAL(viewMessage(QString)), this, SIGNAL(newMessage(QString)));
+    connect(m_plcConnection, SIGNAL(viewMessage(QString)), this, SIGNAL(newMessage(QString)));
+    connect(m_jobManager, SIGNAL(viewMessage(QString)), this, SIGNAL(newMessage(QString)));
 
     // connect job manager signals
-    // !!!tmp connect(m_jobManager, SIGNAL(ready()), this, SLOT(onJobReady()));
-    // !!!tmp connect(m_jobManager, SIGNAL(trainReady()), this, SLOT(onTrainReady()));
-    // !!!tmp connect(m_jobManager, SIGNAL(stepImageReady()), this, SIGNAL(stepImageReady()));
-    // !!!tmp connect(m_jobManager, SIGNAL(imageReady(bool)), this, SIGNAL(imageReady(bool)));
-    // !!!tmp connect(m_jobManager, SIGNAL(newResult(bool)), m_plcConnection, SLOT(onNewResult(bool)));
-    // !!!tmp connect(m_jobManager, SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
+    connect(m_jobManager, SIGNAL(ready()), this, SLOT(onJobReady()));
+    connect(m_jobManager, SIGNAL(trainReady()), this, SLOT(onTrainReady()));
+    connect(m_jobManager, SIGNAL(stepImageReady()), this, SIGNAL(stepImageReady()));
+    connect(m_jobManager, SIGNAL(imageReady(bool)), this, SIGNAL(imageReady(bool)));
+    connect(m_jobManager, SIGNAL(newResult(bool, unsigned char)), m_plcConnection, SLOT(onNewResult(bool, unsigned char)));
+    connect(m_jobManager, SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
 }
 
 /*!
  * \brief UIController::setEditMode
  */
 void UIController::setEditMode() {
-// !!!tmp     m_jobManager->editMode();
+    m_jobManager->editMode();
 
     emit jobReady(true);
 }
@@ -52,7 +56,7 @@ void UIController::setEditMode() {
  * \brief UIController::setRunMode
  */
 void UIController::setRunMode() {
-// !!!tmp     m_jobManager->runMode();
+    m_jobManager->runMode();
 
     emit jobReady(true);
 }
@@ -61,29 +65,53 @@ void UIController::setRunMode() {
  * \brief UIController::acquireImage
  */
 void UIController::acquireImage() {
-// !!!tmp     m_jobManager->acquireImage();
+    m_jobManager->acquireImage();
 }
 
 /*!
- * \brief UIController::acquireInputImage
+ * \brief UIController::acquireStepImage
  * \param symName
  */
-void UIController::acquireInputImage(QString symName) {
-// !!!tmp     m_jobManager->acquireInputImage(symName);
+void UIController::acquireStepImage(QString symName, bool useOutput, bool showGraphics) {
+    m_jobManager->acquireStepImage(symName, useOutput, showGraphics);
 }
 
 /*!
  * \brief UIController::acquireRootImage
  */
-void UIController::acquireRootImage() {
-// !!!tmp    m_jobManager->acquireRootImage();
+void UIController::acquireRootImage(bool showGraphics) {
+   m_jobManager->acquireRootImage(showGraphics);
+}
+
+/*!
+ * \brief UIController::getImageHSI
+ * \param x the image x coordinate
+ * \param y the image y coordinate
+ * \return the HSI as JSON serialized objet { hue: int, saturation: int, intensity: int }
+ */
+QString UIController::getImageHSI(int x, int y) {
+    // int* colorComponents = m_jobManager->getImageHSI(x, y);
+
+    int colorComponents[3];
+
+    // int* colorComponents =
+    m_trainImageProvider->getImageHSI(x, y, colorComponents);
+
+    QJsonObject hsi = {
+        { "hue",        colorComponents[0] },
+        { "saturation", colorComponents[1] },
+        { "intensity",  colorComponents[2] }
+    };
+
+    QJsonDocument doc(hsi);
+    return doc.toJson();
 }
 
 /*!
  * \brief UIController::cancelAcquireImage
  */
 void UIController::cancelAcquireImage() {
-// !!!tmp     m_jobManager->cancelAcquireImage();
+    m_jobManager->cancelAcquireImage();
 }
 
 /*!
@@ -91,7 +119,7 @@ void UIController::cancelAcquireImage() {
  * \return
  */
 bool UIController::acquireStatus() {
-// !!!tmp     return m_jobManager->acquireStatus();
+    return m_jobManager->acquireStatus();
 }
 
 /*!
@@ -124,7 +152,7 @@ void UIController::onTrainReady() {
  * \param value
  */
 void UIController::setAvpNumericParam(QString code, int value) {
-// !!!tmp     m_jobManager->setAvpNumericParam(code, value);
+    m_jobManager->setAvpNumericParam(code, value);
 }
 
 /*!
@@ -134,8 +162,8 @@ void UIController::setAvpNumericParam(QString code, int value) {
  */
 void UIController::setDatumValue(QString stepPath, QString datumJson) {
 
-// !!!tmp     StepDatum stepDatum = DatumProperties::datumFromJson(datumJson);
-// !!!tmp     m_jobManager->setDatumValue(stepPath, stepDatum);
+    StepDatum stepDatum = DatumProperties::datumFromJson(datumJson);
+    m_jobManager->setDatumValue(stepPath, stepDatum);
 }
 
 /*!
@@ -143,9 +171,9 @@ void UIController::setDatumValue(QString stepPath, QString datumJson) {
  * \param stepModel
  */
 void UIController::updateROI(QString stepModel) {
-// !!!tmp     StepProps stepProps = StepProperties::fromJson(stepModel);
+    StepProps stepProps = StepProperties::fromJson(stepModel);
 
-// !!!tmp     m_jobManager->updateROI(stepProps);
+    m_jobManager->updateROI(stepProps);
 }
 
 /*!
@@ -153,9 +181,9 @@ void UIController::updateROI(QString stepModel) {
  * \param stepsModel
  */
 void UIController::updateROIs(QString stepsModel) {
-// !!!tmp     QList<StepProps> stepsProps = StepProperties::listFromJson(stepsModel);
+    QList<StepProps> stepsProps = StepProperties::listFromJson(stepsModel);
 
-// !!!tmp     m_jobManager->updateROIs(stepsProps);
+    m_jobManager->updateROIs(stepsProps);
 }
 
 /*!
@@ -163,15 +191,15 @@ void UIController::updateROIs(QString stepsModel) {
  * \return
  */
 QString UIController::getGlobalDatums() {
-// !!!tmp     QList<DatumType> globalDatums = m_jobManager->getGlobalDatums();
+    QList<DatumType> globalDatums = m_jobManager->getGlobalDatums();
 
-// !!!tmp     QJsonArray datums = {};
-// !!!tmp     for (int i = 0; i < globalDatums.length(); i++) {
-// !!!tmp         datums.append( DatumProperties::asJson( globalDatums[i]) );
-// !!!tmp     }
+    QJsonArray datums = {};
+    for (int i = 0; i < globalDatums.length(); i++) {
+        datums.append( DatumProperties::asJson( globalDatums[i]) );
+    }
 
-// !!!tmp     QJsonDocument doc(datums);
-    return NULL; // !!!tmp doc.toJson();
+    QJsonDocument doc(datums);
+    return doc.toJson();
 }
 
 /*!
@@ -179,15 +207,15 @@ QString UIController::getGlobalDatums() {
  * \return
  */
 QString UIController::getConfigurableSteps(bool withUpdate) {
-// !!!tmp     QList<StepProps> *stepProperties = m_jobManager->getConfigurableSteps(withUpdate);
+    QList<StepProps> *stepProperties = m_jobManager->getConfigurableSteps(withUpdate);
 
-// !!!tmp     QJsonArray steps = {};
-// !!!tmp     for (int i = 0; i < stepProperties->length(); i++) {
-// !!!tmp         steps.append( StepProperties::asJson( stepProperties->at(i) ));
-    // !!!tmp }
+    QJsonArray steps = {};
+    for (int i = 0; i < stepProperties->length(); i++) {
+        steps.append( StepProperties::asJson( stepProperties->at(i) ));
+    }
 
-    // !!!tmp QJsonDocument doc(steps);
-    return ""; // !!!tmp doc.toJson();
+    QJsonDocument doc(steps);
+    return doc.toJson();
 }
 
 /*!
@@ -196,19 +224,44 @@ QString UIController::getConfigurableSteps(bool withUpdate) {
  * \return
  */
 QString UIController::getStep(QString stepPath) {
-   // !!!tmp StepProps stepProperties = m_jobManager->getStepProps(stepPath);
+   StepProps stepProperties = m_jobManager->getStepProps(stepPath);
 
-   // !!!tmp QJsonObject stepJsonObject = StepProperties::asJson(stepProperties);
+   QJsonObject stepJsonObject = StepProperties::asJson(stepProperties);
 
-   // !!!tmp QJsonDocument doc(stepJsonObject);
-   return NULL; // !!!tmp doc.toJson();
+   QJsonDocument doc(stepJsonObject);
+   return doc.toJson();
 }
 
 /*!
  * \brief UIController::trainAll
  */
 void UIController::trainAll() {
-    // !!!tmp m_jobManager->trainAll();
+    m_jobManager->trainAll();
+}
+
+/*!
+ * \brief UIController::regenerate
+ */
+void UIController::regenerate(QString requestor) {
+   m_jobManager->regenerate();
+   m_jobManager->refresh();
+
+   qDebug() << ">> Manager Ready for " << requestor;
+   emit managerReady(requestor);
+}
+
+
+/*!
+ * \brief UIController::tryOutSteps
+ */
+void UIController::tryOutSteps(QString startStepModel, QString requestor) {
+
+    StepProps stepProps = StepProperties::fromJson(startStepModel);
+
+    m_jobManager->tryOutSteps(stepProps.path);
+
+    qDebug() << ">> Manager Ready for " << requestor;
+    emit managerReady(requestor);
 }
 
 /*!
@@ -216,7 +269,7 @@ void UIController::trainAll() {
  * \param stepPath
  */
 void UIController::train(QString stepPath) {
-    // !!!tmp m_jobManager->train(stepPath);
+    m_jobManager->train(stepPath);
 }
 
 /*!
@@ -224,23 +277,25 @@ void UIController::train(QString stepPath) {
  * \param stepPath
  */
 void UIController::trainParent(QString stepPath) {
-    // !!!tmp m_jobManager->trainParent(stepPath);
+    m_jobManager->trainParent(stepPath);
 }
 
 /*!
  * \brief UIController::tryout
  * \param stepPath
  */
-void UIController::tryout(QString stepPath) {
-    // !!!tmp m_jobManager->tryout(stepPath);
-}
+void UIController::tryout(QString stepPath, QString requestor) {
+    m_jobManager->tryout(stepPath);
+
+    qDebug() << ">> Manager Ready for " << requestor;
+    emit managerReady(requestor);}
 
 /*!
  * \brief UIController::deleteStep
  * \param stepPath
  */
 void UIController::deleteStep(QString stepPath) {
-    // !!!tmp m_jobManager->deleteStep(stepPath);
+    m_jobManager->deleteStep(stepPath);
 }
 
 /*!
@@ -263,34 +318,34 @@ QString UIController::getActiveConfigurationId() {
  * \brief UIController::initialize
  */
 void UIController::initialize() {
-    // !!!tmp m_plcConnection->plcConnect();
+    m_plcConnection->plcConnect();
     m_ready = true;
 
-    // !!!tmp QString avp = m_configurationManager->getAvpById(m_activeConfigurationId);
-    // !!!tmp m_jobManager->setAvp(avp);
+    QString avp = m_configurationManager->getAvpById(m_activeConfigurationId);
+    m_jobManager->setAvp(avp);
 
-    // !!!tmp m_jobManager->start();
+    m_jobManager->start();
 }
 
 /*!
  * \brief UIController::requestPLCStatus
  */
 void UIController::requestPLCStatus() {
-    // !!!tmp m_plcConnection->getPLCStatus();
+    m_plcConnection->getPLCStatus();
 }
 
 /*!
  * \brief UIController::requestPLCStart
  */
 void UIController::requestPLCStart() {
-    // !!!tmp m_plcConnection->start();
+    m_plcConnection->start();
 }
 
 /*!
  * \brief UIController::requestPLCStop
  */
 void UIController::requestPLCStop() {
-    // !!!tmp m_plcConnection->stop();
+    m_plcConnection->stop();
 }
 
 /*!
@@ -298,14 +353,14 @@ void UIController::requestPLCStop() {
  * \param group
  */
 void UIController::resetCounters(int group) {
-   // !!!tmp m_plcConnection->resetCounters(group);
+    m_plcConnection->resetCounters(group);
 }
 
 /*!
  * \brief UIController::resetErrors
  */
 void UIController::resetErrors() {
-   // !!!tmp m_plcConnection->resetErrors();
+    m_plcConnection->resetErrors();
 }
 
 /*!
@@ -313,7 +368,7 @@ void UIController::resetErrors() {
  * \param code
  */
 void UIController::startTest(int code) {
-    // !!!tmp m_plcConnection->startTest(code);
+    m_plcConnection->startTest(code);
 }
 
 /*!
@@ -321,7 +376,7 @@ void UIController::startTest(int code) {
  * \param code
  */
 void UIController::stopTest(int code) {
-    // !!!tmp m_plcConnection->stopTest(code);
+    m_plcConnection->stopTest(code);
 }
 
 /*!
@@ -329,36 +384,39 @@ void UIController::stopTest(int code) {
  * \param manualMode
  */
 void UIController::setManualMode(bool manualMode) {
-    // !!!tmp m_plcConnection->setManualMode(manualMode);
+    m_plcConnection->setManualMode(manualMode);
 }
 
 /*!
  * \brief UIController::saveSystemConfiguration
  * \param config
  */
-// !!!tmp void UIController::saveSystemConfiguration(SystemConfiguration *config) {
-// !!!tmp     m_plcConnection->sendSystemConfiguration(config);
-// !!!tmp }
+void UIController::saveSystemConfiguration(SystemConfiguration *config) {
+    m_plcConnection->sendSystemConfiguration(config);
+}
 
-// !!!tmp SystemConfiguration *UIController::getSystemConfiguration() {
-// !!!tmp     return m_plcConnection->getSystemConfiguration();
-// !!!tmp }
+/*!
+ * \brief UIController::getSystemConfiguration
+ * \return
+ */
+SystemConfiguration *UIController::getSystemConfiguration() {
+    return m_plcConnection->getSystemConfiguration();
+}
 
 /*!
  * \brief UIController::onPlcStatus
  * \param systemStatus
  */
-// !!!tmp void UIController::onPlcStatus(SystemStatus *systemStatus) {
-// !!!tmp     emit plcStatus(systemStatus);
+void UIController::onPlcStatus(SystemStatus *systemStatus) {
+    emit plcStatus(systemStatus);
 
-// !!!tmp     quint8 flags = systemStatus->getStatusFlags();
+    quint8 flags = systemStatus->getStatusFlags();
 
     // handle Running status changes
     // -------------------------------------------------------------
-// !!!tmp     bool newRunningStatus = flags & SYSTEM_STARTED_FLAG;
-// !!!tmp
-/*
-    if (newRunningStatus != m_plcRunning) {
+     bool newRunningStatus = flags & SYSTEM_STARTED_FLAG;
+
+     if (newRunningStatus != m_plcRunning) {
         m_plcRunning = newRunningStatus;
 
         if (m_plcRunning) {
@@ -389,7 +447,6 @@ void UIController::setManualMode(bool manualMode) {
         emit plcWarningStatus(m_plcWarning);
     }
 }
-   */
 
 // ------------------------------------------------------------------
 // Configuration Management functions
@@ -399,7 +456,7 @@ void UIController::setManualMode(bool manualMode) {
  * \return
  */
 QStringList UIController::getConfigurationNames() {
-    return {}; // !!!tmp m_configurationManager->getConfigurationNames();
+    return m_configurationManager->getConfigurationNames();
 }
 
 /*!
@@ -407,7 +464,7 @@ QStringList UIController::getConfigurationNames() {
  * \return
  */
 QStringList UIController::getReadOnlyConfigurations() {
-    return {}; // !!!tmp m_configurationManager->getReadOnlyConfigurations();
+    return m_configurationManager->getReadOnlyConfigurations();
 }
 
 /*!
@@ -415,8 +472,6 @@ QStringList UIController::getReadOnlyConfigurations() {
  * \param id
  * \param config
  */
-// !!!tmp
-/*
 BatchConfiguration *UIController::getConfigurationById(QString id) {
 
     BatchConfiguration *config = new BatchConfiguration();
@@ -424,30 +479,31 @@ BatchConfiguration *UIController::getConfigurationById(QString id) {
     // convert pulses to degress (x100)
     // -------------------------------------------------------------
     m_configurationManager->getConfigurationById(id, config);
-    config->setCameraTrigger ( (quint32)( ((m_cyclePulses + config->getCameraTrigger()  - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
-    config->setLightStrobeOff( (quint32)( ((m_cyclePulses + config->getLightStrobeOff() - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
-    config->setRejectValveOn ( (quint32)( ((m_cyclePulses + config->getRejectValveOn()  - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
-    config->setRejectValveOff( (quint32)( ((m_cyclePulses + config->getRejectValveOff() - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
+//    config->setCameraTrigger ( (quint32)( ((m_cyclePulses + config->getCameraTrigger()  - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
+//    config->setLightStrobeOff( (quint32)( ((m_cyclePulses + config->getLightStrobeOff() - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
+//    config->setRejectValveOn ( (quint32)( ((m_cyclePulses + config->getRejectValveOn()  - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
+//    config->setRejectValveOff( (quint32)( ((m_cyclePulses + config->getRejectValveOff() - m_triggerOffset) % m_cyclePulses) * 36000.0 / m_cyclePulses + 0.5) );
+
+    qDebug() << "getting the batch configuration of " << id;
+    qDebug() << "*******" << "UIController::getConfigurationById(id:" << id << ")";       //created for tracking steps
 
     return config;
 }
-*/
 
 /*!
  * \brief UIController::useConfiguration
  * \param config
  * \param loadAvp
  */
-// !!!tmp
-/*void UIController::useBatchConfiguration(BatchConfiguration *config, bool loadAvp) {
+void UIController::useBatchConfiguration(BatchConfiguration *config, bool loadAvp) {
 
     // convert degress (x100) to pulses
     // -------------------------------------------------------------
     BatchConfiguration *newConfig = new BatchConfiguration(config, config);
-    newConfig->setCameraTrigger ( (quint32)(config->getCameraTrigger()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
-    newConfig->setLightStrobeOff( (quint32)(config->getLightStrobeOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
-    newConfig->setRejectValveOn ( (quint32)(config->getRejectValveOn()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
-    newConfig->setRejectValveOff( (quint32)(config->getRejectValveOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    newConfig->setCameraTrigger ( (quint32)(config->getCameraTrigger()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    newConfig->setLightStrobeOff( (quint32)(config->getLightStrobeOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    newConfig->setRejectValveOn ( (quint32)(config->getRejectValveOn()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    newConfig->setRejectValveOff( (quint32)(config->getRejectValveOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
     m_plcConnection->sendBatchConfiguration(newConfig);
     delete newConfig;
 
@@ -461,9 +517,10 @@ BatchConfiguration *UIController::getConfigurationById(QString id) {
     m_configurationManager->storeConfigurationId(m_activeConfigurationId);
 
     QString fileName = m_activeConfigurationId + ".avp";
+    m_jobManager->setBatchConfiguration(config);
     m_jobManager->loadAVP(fileName);
+    qDebug() << " use BatchConfiguration : AVP load";
 }
-*/
 
 /*!
  * \brief UIController::loadAvp
@@ -471,12 +528,18 @@ BatchConfiguration *UIController::getConfigurationById(QString id) {
  */
 void UIController::loadAvp(QString code, bool editMode) {
     // TODO: check the necessity of the editMode parameter
-    Q_UNUSED(editMode);
+    // Q_UNUSED(editMode);
+    qDebug() << "*******" << "UIController::loadAvpcode(code:" << code << ")";       //created for tracking steps
 
     emit jobReady(false);
-
-    QString fileName = code + ".avp";
-    // !!!tmp m_jobManager->loadAVP(fileName);
+    if (editMode) {
+        QString fileName = code + ".avp";
+        m_jobManager->loadAVP(fileName);
+    }
+    else {
+        BatchConfiguration *conf = getConfigurationById(code);
+        useBatchConfiguration(conf, true);
+    }
 }
 
 /*!
@@ -486,15 +549,13 @@ void UIController::loadAvp(QString code, bool editMode) {
 void UIController::saveAvp(QString code) {
 
     QString fileName = code + ".avp";
-    // !!!tmp m_jobManager->saveAVP(fileName);
+    m_jobManager->saveAVP(fileName);
 }
 
 /*!
  * \brief UIController::updateConfiguration
  * \param config
  */
-// !!!tmp
-/*
 void UIController::updateConfiguration(BatchConfiguration *config) {
     qDebug() << "Updating the Batch-Configuration database entry for " + config->getName();
 
@@ -503,14 +564,11 @@ void UIController::updateConfiguration(BatchConfiguration *config) {
     m_configurationManager->updateConfiguration(newConfig);
     delete newConfig;
 }
-*/
 
 /*!
  * \brief UIController::saveConfiguration
  * \param config
  */
-// !!!tmp
-/*
 void UIController::saveConfiguration(BatchConfiguration *config) {
     qDebug() << "Saving the Batch-Configuration database entry for " + config->getName();
 
@@ -519,30 +577,28 @@ void UIController::saveConfiguration(BatchConfiguration *config) {
     m_configurationManager->saveConfiguration(newConfig);
     delete newConfig;
 }
-*/
 
 /*!
  * \brief UIController::convertDegressToPulses
  * \param config
  */
-// !!!tmp
-/*
 void UIController::convertDegressToPulses(BatchConfiguration *config) {
+    Q_UNUSED(config)
+
     // convert degress (x100) to pulses
     // -------------------------------------------------------------
-    config->setCameraTrigger ( (quint32)(config->getCameraTrigger()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
-    config->setLightStrobeOff( (quint32)(config->getLightStrobeOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
-    config->setRejectValveOn ( (quint32)(config->getRejectValveOn()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
-    config->setRejectValveOff( (quint32)(config->getRejectValveOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    config->setCameraTrigger ( (quint32)(config->getCameraTrigger()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    config->setLightStrobeOff( (quint32)(config->getLightStrobeOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    config->setRejectValveOn ( (quint32)(config->getRejectValveOn()  * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
+//    config->setRejectValveOff( (quint32)(config->getRejectValveOff() * m_cyclePulses / 36000.0 + m_triggerOffset + 0.5) % m_cyclePulses  );
 }
-*/
 
 /*!
  * \brief UIController::configurationNameExists
  * \param name
  */
 bool UIController::configurationNameExists(QString name) {
-    return NULL; // !!!tmp m_configurationManager->nameExists(name);
+    return m_configurationManager->nameExists(name);
 }
 
 /*!
@@ -551,7 +607,7 @@ bool UIController::configurationNameExists(QString name) {
  * \param name2
  */
 void UIController::copyAvp(QString name1, QString name2) {
-    // !!!tmp m_configurationManager->copyAvp(name1, name2);
+    m_configurationManager->copyAvp(name1, name2);
 }
 
 /*!
@@ -559,5 +615,13 @@ void UIController::copyAvp(QString name1, QString name2) {
  * \param name
  */
 void UIController::deleteConfiguration(QString name) {
-    // !!!tmp m_configurationManager->deleteConfiguration(name);
+    m_configurationManager->deleteConfiguration(name);
+}
+
+/*!
+ * \brief UIController::shutDown
+ */
+void UIController::shutDown() {
+    m_plcConnection->stop();
+    SystemManager::shutDown();
 }

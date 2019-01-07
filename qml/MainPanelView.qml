@@ -1,9 +1,9 @@
 import QtQuick 2.5
-import QtQuick.Layouts 1.2
+import QtQuick.Layouts 1.3
 import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 
-// !!!tmp import com.darebit.blisterocv 1.0
+import com.darebit.blisterocv 1.0
 
 Item {
     id: mainPanel
@@ -13,6 +13,7 @@ Item {
     property bool   imagesPaused: false
     property string pathRNDSufix: ""
     property string pathFailRNDSufix: ""
+    property double _FIRSTCOLPERC: 0.6
 
     // visual properties
     // -------------------------------------------------------------
@@ -63,14 +64,11 @@ Item {
 
     // PAGES
     // -------------------------------------------------------------
-    // !!!tmp
-    /*
     property Component editBatchConfig: BatchConfigurationView {
         onScreenReady: {
             delayedExecution.acknowledge("edit");
         }
     }
-    */
 
     // Timer to ask for plc status
     // ---------------------------------------------------------------------
@@ -88,9 +86,10 @@ Item {
 
         // TOP MENU -----------------------------------------------------------------------
         TopMenu {
-            height: 50
             Layout.alignment: Qt.AlignTop
-            Layout.bottomMargin: 10
+            Layout.bottomMargin: mainPanel.height / 80;
+            Layout.fillWidth: true
+            height: mainPanel.height / 12;
 
             onItemSelected: {
                 menuItemSelected(menuItem);
@@ -99,65 +98,66 @@ Item {
 
         // MAIN PANEL ---------------------------------------------------------------------
         RowLayout {
-            width: parent.width
-
             Layout.alignment: Qt.AlignTop
+            Layout.fillWidth: true
             Layout.fillHeight: true
 
-            spacing: 20
+            spacing: _uimButtonHeight * 0.4
 
             // INSPECTION IMAGES ----------------------------------------------------------
             ColumnLayout {
                 id: inspectionControls
 
-                width: 500
                 Layout.alignment: Qt.AlignTop
+                Layout.preferredWidth: mainPanel.width * _FIRSTCOLPERC
                 Layout.fillHeight: true
 
                 Rectangle {
                     id: imagewrapper
 
-                    color: "transparent"
-                    anchors.margins: 5
-                    width: parent.width
-                    Layout.preferredHeight: 300
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
+                    color: "transparent"
                     border.color: "#666666"
                     border.width: 1
 
                     Image {
                         id: inspectedSample
-                        Layout.alignment: Qt.AlignTop
-                        width: 496
-                        height: 296
-                        anchors.centerIn: parent
+
+                        anchors.fill: parent
+                        anchors.margins: 5
 
                         cache: false
                         asynchronous: false
 
                         source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
-                        fillMode: Image.PreserveAspectCrop
+                        fillMode: Image.PreserveAspectFit
                         mipmap: true
                     }
 
                     Image {
                         id: previewSample
-                        Layout.alignment: Qt.AlignTop
-                        width: 496
-                        height: 296
-                        anchors.centerIn: parent
+
+                        anchors.fill: parent
+                        anchors.margins: 5
 
                         cache: false
                         asynchronous: false
 
-                        fillMode: Image.PreserveAspectCrop
+                        fillMode: Image.PreserveAspectFit
                         mipmap: true
                         visible: false
                     }
+
                 }
 
+                // INSPECTION IMAGEs CONTROL BUTTONS ----------------------------------------------
                 RowLayout {
                     spacing: 10
+
+                    Layout.preferredHeight: mainPanel.height / 12;
+                    Layout.fillWidth: true
 
                     Button {
                         id: pausebutton
@@ -165,7 +165,7 @@ Item {
                         opacity: enabled ? 0.8 : 0.4
                         iconSource: "../images/pause.png"
                         style: BlackButtonStyle { }
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12;
                         onClicked: {
                             imagesPaused = true;
                         }
@@ -176,7 +176,7 @@ Item {
                         opacity: enabled ? 0.8 : 0.4
                         iconSource: "../images/play.png"
                         style: BlackButtonStyle { }
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12;
                         onClicked: {
                             imagesPaused = false;
                             previewSample.visible = false;
@@ -192,7 +192,7 @@ Item {
                         opacity: enabled ? 0.8 : 0.4
                         iconSource: "../images/remove.png"
                         style: BlackButtonStyle {}
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12;
                         onClicked: {
                             uiController.clearFailedImages();
                             pathFailRNDSufix = "-" + Math.random(10);
@@ -205,7 +205,7 @@ Item {
                         opacity: enabled ? 0.8 : 0.4
                         iconSource: "../images/results.png"
                         style: BlackButtonStyle {}
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12;
                         onClicked: {
                             menuItemSelected("MENU_RESULTS");
                         }
@@ -224,7 +224,7 @@ Item {
 
                         style: BlackButtonStyle {}
                         iconSource: "../images/edit.png"
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12;
 
                         text: activeConfigId
 
@@ -244,31 +244,43 @@ Item {
 
                 // Failed Images
                 // -------------------------------------------------------------------------
-                RowLayout {
-                    width: parent.width
-                    spacing: 10
+                Rectangle {
+                    color: "transparent"
 
-                    Repeater {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: (failedImages.width - 40) / 5
+
+                    ListView {
+                        id: failedImages
+
+                    spacing: 10
+                    anchors.fill: parent
+
+
                         model: 5
 
-                        Rectangle {
-                            height: 92
-                            width: 90
-                            Layout.fillWidth: true
+                        orientation: ListView.Horizontal
+
+                        delegate: Rectangle {
+                            Layout.alignment: Qt.AlignTop
+
+                            height: width
+                            //Layout.fillWidth: true
+                            width: (failedImages.width - 40) / 5
+
                             border.width: 1
                             border.color: "#666666"
                             color: "transparent"
 
                             Image {
-                                width: 88
-                                height: 88
-                                anchors.centerIn: parent
+                                anchors.margins : 4
+                                anchors.fill: parent
 
                                 cache: false
                                 asynchronous: false
 
                                 source: "image://buffer/f" + index + mainPanel.pathFailRNDSufix;
-                                fillMode: Image.PreserveAspectCrop
+                                fillMode: Image.PreserveAspectFit
                                 mipmap: true
 
                                 MouseArea {
@@ -284,67 +296,95 @@ Item {
                             }
                         }
                     }
+
                 }
 
-                // !!!tmp
-                /*
                 MessageView {
                     id: messageArea
 
                     anchors.bottom: parent.bottom
                     Layout.fillWidth: true
-                    height: 50
-                    openHeight: 350
+                    Layout.preferredHeight: mainPanel.height / 12
+                    openHeight: mainPanel.height / 2
                     opacity: 0.9
                 }
-                */
             }
 
             // STATUS PANEL ---------------------------------------------------------------
             ColumnLayout {
                 id: statusMonitor
-                width: 260
+                Layout.preferredWidth: mainPanel.width * 0.4
                 Layout.alignment: Qt.AlignTop | Qt.AlignRight
+                Layout.fillHeight: true
+                Layout.fillWidth: true
                 spacing: 10
+
 
                 RowLayout {
                     id: statusControls
-                    width: parent.width
-                    Layout.alignment: Qt.AlignTop
 
-                    // !!!tmp
-                    /*
+                    Layout.alignment: Qt.AlignTop
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: _uimButtonHeight // mainPanel.height * 2 / 12
+                    Layout.bottomMargin: _uimButtonHeight * 0.1
+
+                    spacing: _uimButtonHeight * 0.2
+
                     IndicatorLed {
+                        Layout.preferredWidth: _uimButtonHeight
+                        Layout.preferredHeight: _uimButtonHeight
+
                         id: runningStatus
                         name: "Running"
-                        height: 50
-                        width: 55
+                        height: _uimButtonHeight
+                        width: height
                         on: statusPlcRunning
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     IndicatorLed {
+                        Layout.preferredWidth: _uimButtonHeight
+                        Layout.preferredHeight: _uimButtonHeight
+
                         id: warningStatus
                         name: "Warning"
-                        height: 50
-                        width: 55
+                        height: _uimButtonHeight
+                        width: height
                         indicatorColor: "#f0a30a"
                         on: statusPlcWarning
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     IndicatorLed {
+                        Layout.preferredWidth: _uimButtonHeight
+                        Layout.preferredHeight: _uimButtonHeight
+
                         id: errorStatus
                         name: "Error"
-                        height: 50
-                        width: 55
+                        height: _uimButtonHeight
+                        width: height
                         indicatorColor: "red"
                         on: statusPlcError
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
                     }
 
                     ToggleDelayButton {
                         id: startButton
+
+                        Layout.preferredWidth: _uimButtonHeight * 1.5
+                        Layout.preferredHeight: _uimButtonHeight * 1.5
+
                         enabled: statusPlcConnected
                         turnedOn: statusPlcRunning
-                        Layout.preferredHeight: 80
+
+                        height: mainPanel.height * 1.5 / 12
+                        // width: height
+                        anchors.verticalCenter: parent.verticalCenter
+
                         onActivated: {
                             mainWindow.statusJobReady = false;
 
@@ -356,7 +396,7 @@ Item {
                                     (function() {
                                         uiController.setRunMode();
                                         uiController.requestPLCStart();
-                                        this.enabled = false;
+                                        //this.enabled = false;  // sometimes the button remains disabled !?
                                     })
                                     .bind(this),
                                     true
@@ -368,7 +408,7 @@ Item {
                                     (function() {
                                         uiController.requestPLCStop();
                                         uiController.setEditMode();
-                                        enabled = false;
+                                        //this.enabled = false;  // sometimes the button remains disabled !?
                                     })
                                     .bind(this),
                                     true
@@ -376,55 +416,65 @@ Item {
                             }
                         }
                     }
-                    */
+
                 }
 
                 TabView {
                     id: counterLists
                     objectName: "counterLists"
 
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 360
                     Layout.alignment: Qt.AlignTop
+                    Layout.preferredWidth: mainPanel.width * 0.25
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
-                    style: TouchTabViewStyle {}
+                    // clip: true
+
+                    // width: statusMonitor.width
+
+                    style: TouchTabViewStyle {
+                        tabWidth: statusMonitor.width * 0.5
+                        tabHeight: mainPanel.height / 12
+                    }
 
                     Tab {
                         title: "Batch"
-                        // !!!tmp
-                        /*
+
+                        anchors.fill: parent
+
                         CounterList {
+                            anchors.fill: parent
                             prefix: "batch";
+                            fontSize: mainPanel.height * 0.25 / 12
                             isActive: counterLists.currentIndex === 0
                         }
-                        */
                     }
                     Tab {
                         title: "Daily"
-                        // !!!tmp
-                        /*
+
+                        anchors.fill: parent
+
                         CounterList {
                             prefix: "daily";
+                            fontSize: mainPanel.height * 0.25 / 12
                             isActive: counterLists.currentIndex === 1
                         }
-                        */
                     }
-                    Tab {
-                        title: "Global"
-                        // !!!tmp
-                        /*
-                        CounterList {
-                            prefix: "global";
-                            isActive: counterLists.currentIndex === 2
-                        }
-                        */
-                    }
+//                    Tab {
+//                        title: "Global"
+
+//                        CounterList {
+//                            prefix: "global";
+//                            fontSize: mainPanel.height * 0.25 / 12
+//                            isActive: counterLists.currentIndex === 2
+//                        }
+//                    }
                 }
 
                 RowLayout {
                     Button {
                         style: BlackButtonStyle {}
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12
                         text: "Errors"
                         enabled: statusPlcError || statusPlcWarning
                         onClicked: {
@@ -437,27 +487,28 @@ Item {
                     Button {
                         enabled: statusPlcConnected
                         style: BlackButtonStyle { }
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: mainPanel.height / 12
                         text: "Clear Counters"
                         onClicked: {
                             uiController.resetCounters(counterLists.currentIndex);
                         }
                     }
                 }
+
+
             }
+
         }
     }
 
     // Delay Execution
     // -----------------------------------------------------------------------
-    // !!!tmp
-    /*
     DelayedExecution {
         id: delayedExecution
 
         onCancel: {
+            console.log("canceling execution (start) wait");
             stackView.pop();
         }
     }
-    */
 }

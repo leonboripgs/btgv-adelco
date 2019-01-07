@@ -6,21 +6,21 @@
 #include <QSettings>
 
 #include <uicontroller.h>
-// #include <trainimageprovider.h> // !!!tmp
-// #include <bufferimageprovider.h> // !!!tmp
+#include <trainimageprovider.h>
+#include <bufferimageprovider.h>
 
 class UIBackend : public QQuickView
 {
     Q_OBJECT
 
 public:
-    UIBackend(UIController*, QSettings*, QWindow *parent = 0);
+    UIBackend(UIController*, QSettings*, TrainImageProvider*, BufferImageProvider*, QWindow *parent = 0);
     ~UIBackend();
 
     void show();
 
-    // !!!tmp TrainImageProvider *getTrainImageProvider();
-    // !!!tmp BufferImageProvider *getBufferImageProvider();
+    TrainImageProvider *getTrainImageProvider();
+    BufferImageProvider *getBufferImageProvider();
 
 private:
     QSettings       *m_settings;
@@ -29,8 +29,8 @@ private:
     void setVisualProperties();
     void initializeTypes();
 
-    // !!!tmp TrainImageProvider *m_trainImageProvider;
-    // !!!tmp BufferImageProvider *m_bufferImageProvider;
+    TrainImageProvider *m_trainImageProvider;
+    BufferImageProvider *m_bufferImageProvider;
 
 private slots:
     void onStatusChanged(QQuickView::Status);

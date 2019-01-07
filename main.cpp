@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
     // get application settings
     // ---------------------------------------------------------------------------
-    QSettings *settings = new QSettings("blister-tagv.ini", QSettings::IniFormat);
+    QSettings *settings = new QSettings("C:/btgv-adelco/btgv-adelco.ini", QSettings::IniFormat);
     settings->beginGroup("Window");
     bool hideCursor = settings->value("hideCursor", true).toBool();
     bool fullScreen = settings->value("fullScreen", true).toBool();

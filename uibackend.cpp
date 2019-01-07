@@ -4,8 +4,8 @@
 #include <QQmlContext>
 #include "uibackend.h"
 
-// !!!tmp #include <systemconfiguration.h>
-// !!!tmp #include <batchconfiguration.h>
+#include <systemconfiguration.h>
+#include <batchconfiguration.h>
 
 // TODO:
 /*
@@ -19,10 +19,13 @@
  * \brief UIBackend::UIBackend
  * \param st an initialized application settings object
  */
-UIBackend::UIBackend(UIController *controller, QSettings *st, QWindow *parent) : QQuickView(parent)
+UIBackend::UIBackend(UIController *controller, QSettings *st, TrainImageProvider *trainImageProvider, BufferImageProvider *bufferImageProvider, QWindow *parent) : QQuickView(parent)
 {
     m_controller = controller;
     m_settings = st;
+
+    m_trainImageProvider = trainImageProvider;
+    m_bufferImageProvider = bufferImageProvider;
 
     initializeTypes();
     setVisualProperties();
@@ -60,7 +63,7 @@ void UIBackend::onStatusChanged(QQuickView::Status status) {
  * \brief UIBackend::onClearFailedImages
  */
 void UIBackend::onClearFailedImages() {
-    // !!!tmp m_bufferImageProvider->clearFailedImages();
+    m_bufferImageProvider->clearFailedImages();
 }
 
 /**
@@ -82,32 +85,32 @@ void UIBackend::show() {
  * \brief UIBackend::getTrainImageProvider
  * \return
  */
-// !!!tmp TrainImageProvider *UIBackend::getTrainImageProvider() {
-// !!!tmp     return m_trainImageProvider;
-// !!!tmp }
+TrainImageProvider *UIBackend::getTrainImageProvider() {
+    return m_trainImageProvider;
+}
 
 /*!
  * \brief UIBackend::getBufferImageProvider
  * \return
  */
-// !!!tmp BufferImageProvider *UIBackend::getBufferImageProvider() {
-// !!!tmp     return m_bufferImageProvider;
-// !!!tmp }
+BufferImageProvider *UIBackend::getBufferImageProvider() {
+    return m_bufferImageProvider;
+}
 
 /**
  * @brief UIBackend::initializeTypes
  */
 void UIBackend::initializeTypes() {
 
-// !!!tmp     m_bufferImageProvider = new BufferImageProvider();
-// !!!tmp     m_trainImageProvider = new TrainImageProvider(this);
+    // m_bufferImageProvider = new BufferImageProvider();
+    // m_trainImageProvider = new TrainImageProvider(this);
 
-// !!!tmp     this->engine()->addImageProvider(QLatin1String("train"), m_trainImageProvider);
-// !!!tmp     this->engine()->addImageProvider(QLatin1String("buffer"), m_bufferImageProvider);
+    this->engine()->addImageProvider(QLatin1String("train"), m_trainImageProvider);
+    this->engine()->addImageProvider(QLatin1String("buffer"), m_bufferImageProvider);
 
-// !!!tmp     qmlRegisterType<SystemStatus>("com.darebit.blisterocv",         1, 0, "SystemStatus");
-// !!!tmp     qmlRegisterType<SystemConfiguration>("com.darebit.blisterocv",  1, 0, "SystemConfiguration");
-// !!!tmp     qmlRegisterType<BatchConfiguration>("com.darebit.blisterocv",   1, 0, "BatchConfiguration");
+    qmlRegisterType<SystemStatus>("com.darebit.blisterocv",         1, 0, "SystemStatus");
+    qmlRegisterType<SystemConfiguration>("com.darebit.blisterocv",  1, 0, "SystemConfiguration");
+    qmlRegisterType<BatchConfiguration>("com.darebit.blisterocv",   1, 0, "BatchConfiguration");
 
     // TODO:
     /*

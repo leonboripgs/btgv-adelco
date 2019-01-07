@@ -7,7 +7,7 @@ import QtQuick.Layouts 1.2
 import QtQuick.Window 2.2
 import Qt.labs.settings 1.0
 
-// !!!tmp import com.darebit.blisterocv 1.0
+import com.darebit.blisterocv 1.0
 
 Rectangle {
     id: mainWindow
@@ -21,14 +21,14 @@ Rectangle {
     property bool statusPlcDataToggle: false                // used to mask multiple systemStatus changed notify events
     property bool statusJobReady: uiController.isJobReady()
 
-    // !!!tmp property SystemStatus plcStatusData
+    property SystemStatus plcStatusData
     property string activeConfigId
 
     // external events
     // -------------------------------------------------------------
     signal plcConnect();
     signal plcDisconnect();
-    // !!!tmp signal plcStatus(SystemStatus status);
+    signal plcStatus(SystemStatus status);
     signal plcStarted();
     signal plcStopped();
     signal plcErrorStatus(bool errorStatus);
@@ -42,6 +42,12 @@ Rectangle {
     // -------------------------------------------------------------
     color: "#161616"
     anchors.fill: parent
+
+    property int _uimWidth: width
+    property int _uimHeight: height
+    property int _uimButtonHeight: height / 12
+    property int _uimH1FontSize: height / 36
+    property int _uimFontSize: height / 48
 
     // configuration properties
     // -------------------------------------------------------------
@@ -67,6 +73,8 @@ Rectangle {
         statusJobReady = ready;
         if (ready === true) {
             activeConfigId = uiController.getActiveConfigurationId();
+
+            console.log("Active conf id: " + activeConfigId);
         }
     }
 
@@ -92,13 +100,10 @@ Rectangle {
 
     // handle PLC status messages
     // -------------------------------------------------------------
-    // !!!tmp
-    /*
     onPlcStatus: {
         plcStatusData = status;
         statusPlcDataToggle = ! statusPlcDataToggle;
     }
-    */
 
     // handle PLC error and warning status changes
     // -------------------------------------------------------------
@@ -127,23 +132,23 @@ Rectangle {
     // -------------------------------------------------------------
     // -------------------------------------------------------------
 
-    // !!!tmp property Component batchConfiguration: ConfigListView { }
+    property Component batchConfiguration: ConfigListView { }
 
     // Statistis page
     // -------------------------------------------------------------
-    // !!!tmp property Component resultsList: ResultsView { }
+    property Component resultsList: ResultsView { }
 
     // Errors page
     // -------------------------------------------------------------
-    // !!!tmp property Component errorsList: ErrorsView { }
+    property Component errorsList: ErrorsView { }
 
     // System Configuration page
     // -------------------------------------------------------------
-    // !!!tmp property Component systemConfiguration: SystemConfigurationView { }
+    property Component systemConfiguration: SystemConfigurationView { }
 
     // System Test page
     // -------------------------------------------------------------
-    // !!!tmp property Component systemTest: SystemTestView { }
+    property Component systemTest: SystemTestView { }
 
     // Main Panel page
     // -------------------------------------------------------------
@@ -188,7 +193,7 @@ Rectangle {
                 break;
 
             case "MENU_CLOSE":
-                Qt.quit();
+                closeDialog.visible = true;
                 break;
             }
         }
@@ -197,7 +202,7 @@ Rectangle {
     StackView {
         id: stackView
         anchors.fill: parent
-        anchors.margins: 10
+        anchors.margins: _uimButtonHeight * 0.2
         initialItem: mainPanel
     }
 
@@ -253,9 +258,26 @@ Rectangle {
         BusyIndicator {
             id: busyIndicator
             running: statusJobReady === false
-            width: 50
-            height: 50
+            width: _uimButtonHeight
+            height: _uimButtonHeight
             anchors.centerIn: parent
+        }
+    }
+
+    // Application Close dialog
+    // -------------------------------------------------------------
+    CloseDialog {
+        id: closeDialog
+    }
+
+    // Delay Execution
+    // -----------------------------------------------------------------------
+    DelayedExecution {
+        id: rootDelayedExecution
+
+        onCancel: {
+            console.log("canceling execution (start) wait");
+            stackView.pop();
         }
     }
 }
