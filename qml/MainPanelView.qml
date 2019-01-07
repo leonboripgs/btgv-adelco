@@ -121,19 +121,80 @@ Item {
                     color: "transparent"
                     border.color: "#666666"
                     border.width: 1
+                    Layout.alignment: Qt.AlignCenter
 
-                    Image {
-                        id: inspectedSample
+                    RowLayout {
+                        spacing: 10
+                        anchors.margins: 10
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.alignment: Qt.AlignVCenter
+                            ColumnLayout {
+                                Image {
+                                    id: inspectedSample1
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
+                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
 
-                        anchors.fill: parent
-                        anchors.margins: 5
+                                    cache: false
+                                    asynchronous: false
+                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    fillMode: Image.Stretch
+                                    mipmap: true
+                                }
+                                Image {
+                                    id: inspectedSample2
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
+                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
 
-                        cache: false
-                        asynchronous: false
+                                    cache: false
+                                    asynchronous: false
 
-                        source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
-                        fillMode: Image.PreserveAspectFit
-                        mipmap: true
+                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    fillMode: Image.Stretch
+                                    mipmap: true
+                                }
+
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.alignment: Qt.AlignVCenter
+                            ColumnLayout {
+                                Image {
+                                    id: inspectedSample3
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
+                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
+
+                                    cache: false
+                                    asynchronous: false
+
+                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    fillMode: Image.Stretch
+                                    mipmap: true
+                                }
+                                Image {
+                                    id: inspectedSample4
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
+                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
+
+                                    cache: false
+                                    asynchronous: false
+
+                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    fillMode: Image.Stretch
+                                    mipmap: true
+                                }
+
+                            }
+                        }
+
                     }
 
                     Image {
@@ -180,7 +241,10 @@ Item {
                         onClicked: {
                             imagesPaused = false;
                             previewSample.visible = false;
-                            inspectedSample.visible = true;
+//                            inspectedSample1.visible = true;
+//                            inspectedSample2.visible = true;
+//                            inspectedSample3.visible = true;
+//                            inspectedSample4.visible = true;
                             imageUpdated(false);
                             imagewrapper.border.color = "#666666";
                         }
