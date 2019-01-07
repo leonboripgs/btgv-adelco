@@ -16,8 +16,8 @@
         <file>images/samesize.png</file>
         <file>images/tab_selected.png</file>
         <file>images/tabs_standard.png</file>
-        <file>images/up.png</file>		
-        <file>images/zoomfit.png</file>		
+        <file>images/up.png</file>
+        <file>images/zoomfit.png</file>
         <file>images/zoomin.png</file>
         <file>images/zoomnone.png</file>
         <file>images/zoomout.png</file>
@@ -54,7 +54,8 @@
         <file>qml/SystemConfigurationView.qml</file>
         <file>qml/SystemTestView.qml</file>
         <file>qml/ToggleDelayButton.qml</file>
-        <file>qml/TopMenu.qml</file>		
+        <file>qml/TopMenu.qml</file>
         <file>qml/TouchTabViewStyle.qml</file>
+        <file>images/logo.png</file>
     </qresource>
 </RCC>

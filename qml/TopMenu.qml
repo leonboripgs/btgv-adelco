@@ -34,7 +34,7 @@ RowLayout {
 
         Image {
             anchors.fill: parent
-            source: "file:logo.png"
+            source: "../images/logo.png"
             fillMode: Image.PreserveAspectFit
         }
     }
