@@ -25,8 +25,8 @@ private:
     ConfigurationManager    *m_configurationManager;
     JobManager              *m_jobManager;
 
-    TrainImageProvider      *m_trainImageProvider;
-    BufferImageProvider     *m_bufferImageProvider;
+    TrainImageProvider      *m_trainImageProvider[4];
+    BufferImageProvider     *m_bufferImageProvider[5];
 };
 
 #endif // MAINWINDOW_H

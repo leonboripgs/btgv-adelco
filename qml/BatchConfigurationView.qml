@@ -18,6 +18,7 @@ Item {
     property bool   waitingImage:   false
     property var    readOnlyConfig: uiController.getReadOnlyConfigurations()    // get list of read only configurations
     property string pathRNDSufix:   ""
+    property int    trainingInspectionID: 1
 
     // visual properties
     // -------------------------------------------------------------
@@ -36,7 +37,7 @@ Item {
     // -------------------------------------------------------------
     function refreshImage() {
         pathRNDSufix = "-" + Math.random(10);
-        inspectedSample.source = "image://train/snapshot"  + pathRNDSufix;
+        inspectedSample.source = "image://train" + trainingInspectionID + "/snapshot"  + pathRNDSufix;
     }
 
     // .............................................................
@@ -48,6 +49,7 @@ Item {
 
         onTriggered: {
             waitingImage = true;
+            console.log("*********************** AcuireImage");
             uiController.acquireImage();
         }
     }
@@ -58,7 +60,9 @@ Item {
 
         waitingImage = false;
         pathRNDSufix = "-" + Math.random(10);
-        inspectedSample.source = "image://train/snapshot"  + pathRNDSufix;
+        inspectedSample.source = "image://train" + trainingInspectionID + "/snapshot"  + pathRNDSufix;
+
+        console.log(inspectedSample.source);
 
         acquireDelay.start();
     }
@@ -75,7 +79,7 @@ Item {
         batchConfig = uiController.getConfigurationById(configId);
         parameterList = [];
 
-        var gDatumsJson = uiController.getGlobalDatums();
+        var gDatumsJson = uiController.getGlobalDatums(trainingInspectionID - 1);
         globalDatums = JSON.parse(gDatumsJson);
 
         // append the global Datums
@@ -300,6 +304,56 @@ Item {
                     mipmap: true
                 }
 
+                RowLayout {
+                    height: _uimButtonHeight
+
+                    Button {
+                        id: requestInspection1
+                        iconSource: trainingInspectionID == 1 ? "../images/cam1_active.png" : "../images/cam1.png"
+                        style: BlackButtonStyle {}
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            trainingInspectionID = 1;
+                            initialize();
+                        }
+                    }
+                    Button {
+                        id: requestInspection2
+                        style: BlackButtonStyle {}
+                        iconSource: trainingInspectionID == 2 ? "../images/cam2_active.png" : "../images/cam2.png"
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            trainingInspectionID = 2;
+                            initialize();
+                        }
+                    }
+                    Button {
+                        id: requestInspection3
+                        style: BlackButtonStyle {}
+                        iconSource: trainingInspectionID == 3 ? "../images/cam3_active.png" : "../images/cam3.png"
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            trainingInspectionID = 3;
+                            initialize();
+                        }
+                    }
+                    Button {
+                        id: requestInspection4
+                        iconSource: trainingInspectionID == 4 ? "../images/cam4_active.png" : "../images/cam4.png"
+                        style: BlackButtonStyle {}
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            trainingInspectionID = 4;
+                            initialize();
+                       }
+                    }
+
+                }
+
                 BusyIndicator {
                     id: imageWaitIndicator
 
@@ -344,7 +398,7 @@ Item {
                                 uiController.useBatchConfiguration(batchConfig, false);
                             } else if (modelData.type === "avpParam") {
                                 var code = param.ListView.view.model[index].code;
-                                uiController.setAvpNumericParam(code, param.value);
+                                uiController.setAvpNumericParam(trainingInspectionID - 1, code, param.value);
                             }
                         }
 

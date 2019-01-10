@@ -17,7 +17,7 @@ class SetupManager : public QObject
     Q_OBJECT
 
 public:
-    explicit SetupManager(QObject *parent = 0);
+    explicit SetupManager(int inspectionId = 0, QObject *parent = 0);
     ~SetupManager();
 
     void connectJob(QAxObject*);
@@ -49,6 +49,8 @@ private:
     QAxWidget*  m_setupManager;
     QAxObject*  m_systemStep;
     QTimer*     m_acquireTimer;
+    int         m_inspectionId;
+    QAxObject   *insp[5];
 };
 
 #endif // SETUPMANAGER_H

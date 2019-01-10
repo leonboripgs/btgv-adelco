@@ -7,12 +7,13 @@
  * @brief SetupManager::SetupManager
  * @param parent
  */
-SetupManager::SetupManager(QObject *parent) : QObject(parent)
+SetupManager::SetupManager(int inspectionId, QObject *parent) : QObject(parent)
 {
     m_systemStep = NULL;
     m_setupManager = new QAxWidget("{977C7146-FD15-11D0-AA2E-0020AF63DBFE}");
     m_setupManager->hide();
     m_setupManager->setDisabled(true);
+    m_inspectionId = inspectionId;
 
     // setup Setup Manager exception handler
     connect(m_setupManager,
@@ -50,14 +51,21 @@ void SetupManager::connectJob(QAxObject *systemStep) {
 
     m_systemStep = systemStep;
 
-    QAxObject *inspection = systemStep->querySubObject("Find(\"Step.Inspection\", 0)");
-    if (inspection != NULL && ! inspection->isNull()) {
-        unsigned int handle = inspection->property("Handle").toUInt();
+    qDebug() << "************* Connect Job";
+
+    insp[0] = systemStep->querySubObject("Find(\"Step.Inspection\", 0)");
+    insp[1] = this->insp[0]->querySubObject("Next()");
+    insp[2] = this->insp[1]->querySubObject("Next()");
+    insp[3] = this->insp[2]->querySubObject("Next()");
+    insp[4] = this->insp[3]->querySubObject("Next()");
+    if (insp[m_inspectionId] != NULL && ! insp[m_inspectionId]->isNull()) {
+        unsigned int handle = insp[m_inspectionId]->property("Handle").toUInt();
+
+        qDebug() << "************* handle " << handle << endl;
 
         if ( ! m_setupManager->dynamicCall("Edit(long hStep, short userMode)", handle, 0).toBool() ) {
             qCritical() << "Cannot set Setup Manager to edit Job";
         }
-        delete inspection;
     }
 }
 
@@ -229,7 +237,7 @@ void SetupManager::getImage(bool showGraphics) {
 
 //    qDebug() << "Setup Manager - getting image with graphics: " << showGraphics;
 
-    QAxObject *snapshot = m_systemStep->querySubObject("Find(\"Step.Snapshot\", 0)");
+    QAxObject *snapshot = this->insp[this->m_inspectionId]->querySubObject("Find(\"Step.Snapshot\", 0)");
     if (snapshot != NULL && ! snapshot->isNull()) {
 
         QAxObject *bufferDm = snapshot->querySubObject("Datum(\"BufOut\")");

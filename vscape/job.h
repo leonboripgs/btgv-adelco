@@ -27,8 +27,8 @@ public:
     void walkStep(QAxObject*, QList<StepProps> *, StepProps parentProps, QString path = "", int level = 0, walkCommand cmd = scanForSteps);
     void walkJob(QList<StepProps> *, walkCommand);
 
-    void setAvpNumericParameter(QString stepSym, QString datumSym, QVariant value);
-    QVariant getAvpNumericParameter(QString stepSym, QString datumSym);
+    void setAvpNumericParameter(int inspectionId, QString stepSym, QString datumSym, QVariant value);
+    QVariant getAvpNumericParameter(int inspectionId, QString stepSym, QString datumSym);
     void updateROI(StepProps stepProps);
     void setDatumValue(QAxObject *step, StepDatum stepDatum);
     void setDatumValue(QString stepPath, StepDatum stepDatum);

@@ -19,13 +19,19 @@
  * \brief UIBackend::UIBackend
  * \param st an initialized application settings object
  */
-UIBackend::UIBackend(UIController *controller, QSettings *st, TrainImageProvider *trainImageProvider, BufferImageProvider *bufferImageProvider, QWindow *parent) : QQuickView(parent)
+UIBackend::UIBackend(UIController *controller, QSettings *st, TrainImageProvider **trainImageProvider, BufferImageProvider **bufferImageProvider, QWindow *parent) : QQuickView(parent)
 {
     m_controller = controller;
     m_settings = st;
 
-    m_trainImageProvider = trainImageProvider;
-    m_bufferImageProvider = bufferImageProvider;
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_trainImageProvider[i] = trainImageProvider[i];
+    }
+    for (int i = 0 ; i < 5 ; i ++)
+    {
+        m_bufferImageProvider[i] = bufferImageProvider[i];
+    }
 
     initializeTypes();
     setVisualProperties();
@@ -63,7 +69,10 @@ void UIBackend::onStatusChanged(QQuickView::Status status) {
  * \brief UIBackend::onClearFailedImages
  */
 void UIBackend::onClearFailedImages() {
-    m_bufferImageProvider->clearFailedImages();
+    for (int i = 0 ; i < 5 ; i ++)
+    {
+        m_bufferImageProvider[i]->clearFailedImages();
+    }
 }
 
 /**
@@ -85,16 +94,16 @@ void UIBackend::show() {
  * \brief UIBackend::getTrainImageProvider
  * \return
  */
-TrainImageProvider *UIBackend::getTrainImageProvider() {
-    return m_trainImageProvider;
+TrainImageProvider *UIBackend::getTrainImageProvider(int id) {
+    return m_trainImageProvider[id];
 }
 
 /*!
  * \brief UIBackend::getBufferImageProvider
  * \return
  */
-BufferImageProvider *UIBackend::getBufferImageProvider() {
-    return m_bufferImageProvider;
+BufferImageProvider *UIBackend::getBufferImageProvider(int id) {
+    return m_bufferImageProvider[id];
 }
 
 /**
@@ -105,8 +114,19 @@ void UIBackend::initializeTypes() {
     // m_bufferImageProvider = new BufferImageProvider();
     // m_trainImageProvider = new TrainImageProvider(this);
 
-    this->engine()->addImageProvider(QLatin1String("train"), m_trainImageProvider);
-    this->engine()->addImageProvider(QLatin1String("buffer"), m_bufferImageProvider);
+    for (int i = 0 ;  i < 4 ; i ++)
+    {
+        QString str("train");
+        str.append('1' + i);
+        this->engine()->addImageProvider(str.toLatin1().data(), m_trainImageProvider[i]);
+    }
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        QString str("buffer");
+        str.append('1' + i);
+        this->engine()->addImageProvider(str.toLatin1().data(), m_bufferImageProvider[i]);
+    }
+    this->engine()->addImageProvider("buffer", m_bufferImageProvider[4]);
 
     qmlRegisterType<SystemStatus>("com.darebit.blisterocv",         1, 0, "SystemStatus");
     qmlRegisterType<SystemConfiguration>("com.darebit.blisterocv",  1, 0, "SystemConfiguration");

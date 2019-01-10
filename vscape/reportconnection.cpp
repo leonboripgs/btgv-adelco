@@ -7,9 +7,10 @@
  * \brief ReportConnection::ReportConnection
  * \param parent
  */
-ReportConnection::ReportConnection(QSettings *settings, QObject *parent) : QObject(parent)
+ReportConnection::ReportConnection(QSettings *settings, int reportId, QObject *parent) : QObject(parent)
 {
     m_connected = false;
+    this->m_reportId = reportId;
 
     // get application settings
     // ------------------------------------------------------------------------------------
@@ -124,6 +125,7 @@ void ReportConnection::addImageToReport(QAxObject *system)
         qDebug() << "- Adding Data Record";
 
         QString dataRecAddArg = "DataRecordAdd(\"" + snapshot->property("NameSym").toString() + ".BufOut\")";
+
         m_reportConnection->dynamicCall(dataRecAddArg.toLatin1().data());
     }
 
@@ -147,6 +149,7 @@ void ReportConnection::onNewReport(IDispatch* iDisp, bool bToFreeze) {
 
     // IAvpInspReport
     QAxObject *inspection = new QAxObject(iDisp);
+    qDebug() << "********" << "ReportConnection::onNewReport";
     QAxObject *stats = inspection->querySubObject("Stats");
 
     bool overrun = false;
@@ -197,6 +200,9 @@ void ReportConnection::onNewReport(IDispatch* iDisp, bool bToFreeze) {
                 if (handle && width > 0 && height > 0) {
                     QPixmap image = Job::fromBufferDm(bufferDm, true);
                     emit newImage(&image, result);
+                    if (!result) {
+                        emit newFailedImage(&image, this->m_reportId);
+                    }
                 }
 
                 // save the image

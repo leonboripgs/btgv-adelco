@@ -6,7 +6,7 @@ UIController::UIController(
         PLCConnection *plcConnection,
         ConfigurationManager *manager,
         JobManager *jobmanager,
-        TrainImageProvider *trainImageProvider,
+        TrainImageProvider **trainImageProvider,
         QObject *parent) : QObject(parent)
 {
     m_activeConfigurationId = configId;
@@ -15,7 +15,11 @@ UIController::UIController(
     m_plcError = false;
     m_plcWarning = false;
 
-    m_trainImageProvider = trainImageProvider;
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_trainImageProvider[i] = trainImageProvider[i];
+    }
+
     m_plcConnection = plcConnection;
     m_configurationManager = manager;
     m_jobManager = jobmanager;
@@ -95,7 +99,7 @@ QString UIController::getImageHSI(int x, int y) {
     int colorComponents[3];
 
     // int* colorComponents =
-    m_trainImageProvider->getImageHSI(x, y, colorComponents);
+    m_trainImageProvider[0]->getImageHSI(x, y, colorComponents);
 
     QJsonObject hsi = {
         { "hue",        colorComponents[0] },
@@ -151,8 +155,8 @@ void UIController::onTrainReady() {
  * \param code
  * \param value
  */
-void UIController::setAvpNumericParam(QString code, int value) {
-    m_jobManager->setAvpNumericParam(code, value);
+void UIController::setAvpNumericParam(int inspectionId, QString code, int value) {
+    m_jobManager->setAvpNumericParam(inspectionId, code, value);
 }
 
 /*!
@@ -190,8 +194,8 @@ void UIController::updateROIs(QString stepsModel) {
  * \brief UIController::getGlobalDatums
  * \return
  */
-QString UIController::getGlobalDatums() {
-    QList<DatumType> globalDatums = m_jobManager->getGlobalDatums();
+QString UIController::getGlobalDatums(int inspectionId) {
+    QList<DatumType> globalDatums = m_jobManager->getGlobalDatums(inspectionId);
 
     QJsonArray datums = {};
     for (int i = 0; i < globalDatums.length(); i++) {

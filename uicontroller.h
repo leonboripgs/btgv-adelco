@@ -39,8 +39,8 @@ public:
     Q_INVOKABLE bool isJobReady();
     Q_INVOKABLE void loadAvp(QString code, bool editMode = true);
     Q_INVOKABLE void saveAvp(QString code);
-    Q_INVOKABLE void setAvpNumericParam(QString code, int value);
-    Q_INVOKABLE QString getGlobalDatums();
+    Q_INVOKABLE void setAvpNumericParam(int inspectionId, QString code, int value);
+    Q_INVOKABLE QString getGlobalDatums(int inspectionId);
     Q_INVOKABLE QString getConfigurableSteps(bool withUpdate = false);
     Q_INVOKABLE QString getStep(QString path);
     Q_INVOKABLE void setDatumValue(QString stepPath, QString datumJson);
@@ -70,7 +70,7 @@ public:
             PLCConnection*,
             ConfigurationManager*,
             JobManager*,
-            TrainImageProvider*,
+            TrainImageProvider**,
             QObject *parent = 0
             );
 
@@ -121,7 +121,7 @@ private:
     PLCConnection           *m_plcConnection;
     ConfigurationManager    *m_configurationManager;
     JobManager              *m_jobManager;
-    TrainImageProvider      *m_trainImageProvider;
+    TrainImageProvider      *m_trainImageProvider[4];
 
     void convertDegressToPulses(BatchConfiguration *);
 };

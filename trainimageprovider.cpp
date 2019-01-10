@@ -1,9 +1,13 @@
 #include "trainimageprovider.h"
+#include "qtimer.h"
+#include "qpainter.h"
+#include "qdatetime.h"
 
-TrainImageProvider::TrainImageProvider(QObject *parent) : QObject(parent), QQuickImageProvider(QQuickImageProvider::Pixmap)
+TrainImageProvider::TrainImageProvider(int providerId, QObject *parent) : QObject(parent), QQuickImageProvider(QQuickImageProvider::Pixmap)
 {
     this->pixmap = QPixmap(500, 400);
     this->pixmap.fill(QColor("#303030").rgba());
+    this->providerId = providerId;
 }
 
 /*!
@@ -44,6 +48,25 @@ QPixmap TrainImageProvider::requestPixmap(const QString &id, QSize *size, const 
 void TrainImageProvider::updatePixmap(QPixmap *input) {
 
     this->pixmap = QPixmap(*input);
+
+    QString timeStamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    timeStamp += " Inspection" + QString::number(this->providerId + 1);
+
+    QRect imgRect = this->pixmap.rect();
+    int imgWidth = imgRect.width();
+    int imgHeight = imgRect.height();
+    int labelWidth = imgWidth/3;
+    int labelHeight = imgHeight/20;
+    int fontSize = imgHeight/50;
+
+    imgRect.setTopLeft(QPoint(imgWidth - labelWidth - 5, imgHeight - labelHeight -5));
+
+    QPainter painter(&this->pixmap);
+    painter.setBrush(QBrush(QColor(0, 0, 0, 128)));
+    painter.setFont(QFont("Arial", fontSize));
+    painter.drawRect(imgRect);
+    painter.setPen(QColor(255, 255, 255));
+    painter.drawText(imgRect, Qt::AlignCenter, timeStamp);
 
     emit imageUpdated();
 }

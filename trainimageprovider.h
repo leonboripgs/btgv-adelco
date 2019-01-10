@@ -8,7 +8,7 @@ class TrainImageProvider : public QObject, public QQuickImageProvider
 {
     Q_OBJECT
 public:
-    explicit TrainImageProvider(QObject *parent = 0);
+    explicit TrainImageProvider(int providerId = 1, QObject *parent = 0);
     QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize);
     void getImageHSI(int x, int y, int*);
 
@@ -20,6 +20,7 @@ public slots:
 
 private:
     QPixmap pixmap;
+    int providerId;
 };
 
 #endif // TRAINIMAGEPROVIDER_H

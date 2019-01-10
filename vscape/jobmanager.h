@@ -47,9 +47,9 @@ public:
     void setAvp(QString avp);
     void setBatchConfiguration(BatchConfiguration *conf);
 
-    void setAvpNumericParam(QString code, int value);
-    QVariant getAvpNumericParam(QString code);
-    QList<DatumType> getGlobalDatums();
+    void setAvpNumericParam(int inspectionId, QString code, int value);
+    QVariant getAvpNumericParam(int inspectionId, QString code);
+    QList<DatumType> getGlobalDatums(int inspectionId);
     QList<StepProps> *getConfigurableSteps(bool withUpdate = false);
     StepProps getStepProps(QString stepPath);
     void updateROI(StepProps step);
@@ -62,17 +62,33 @@ signals:
     void ready();
     void trainReady();
     void stepImageReady();
-    void trainImageAcquired(QPixmap*);
-    void newImage(QPixmap*, bool);
+    void trainImageAcquired1(QPixmap*);
+    void trainImageAcquired2(QPixmap*);
+    void trainImageAcquired3(QPixmap*);
+    void trainImageAcquired4(QPixmap*);
+    void newImage1(QPixmap*, bool);
+    void newImage2(QPixmap*, bool);
+    void newImage3(QPixmap*, bool);
+    void newImage4(QPixmap*, bool);
+
+    void newFailedImage(QPixmap*, int);
+
     void viewMessage(QString msg);
     void imageReady(bool);
     void newResult(bool, unsigned char);
     void newStatistics(QString statsJson);
 
 public slots:
-    void onTrainImageAcquired(QPixmap*);
-    void onNewImage(QPixmap*,bool);
+    void onTrainImageAcquired1(QPixmap*);
+    void onTrainImageAcquired2(QPixmap*);
+    void onTrainImageAcquired3(QPixmap*);
+    void onTrainImageAcquired4(QPixmap*);
+    void onNewImage1(QPixmap*,bool);
+    void onNewImage2(QPixmap*,bool);
+    void onNewImage3(QPixmap*,bool);
+    void onNewImage4(QPixmap*,bool);
     void onNewResult(bool, unsigned char);
+    void onNewFailedImage(QPixmap*, int providerId);
 
 private slots:
     void onCameraReady();
@@ -92,14 +108,14 @@ private:
 
     QMap<QString, DatumType> *m_globalDatums;
     void prepareDatums();
-    void updateGlobalDatumValues();
+    void updateGlobalDatumValues(int inspectionId);
 
     QList<StepProps> *m_stepProperties;
 
     Job*                m_job;
     Camera*             m_camera;
-    SetupManager*       m_setupManager;
-    ReportConnection*   m_reportConnection;
+    SetupManager*       m_setupManager[4];
+    ReportConnection*   m_reportConnection[4];
     BatchConfiguration* m_batchConfiguration;
 };
 

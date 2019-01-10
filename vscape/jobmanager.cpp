@@ -31,16 +31,48 @@ JobManager::JobManager(QSettings *settings, QObject *parent) : QObject(parent)
     m_stepProperties = NULL;
 
     m_job = new Job(this);
-    m_camera = new Camera(m_cameraName, this);
-    m_reportConnection = new ReportConnection(m_settings, this);
-    m_setupManager = NULL;
 
+    m_camera = new Camera(m_cameraName, this);
     connect(m_camera, SIGNAL(cameraReady()), this, SLOT(onCameraReady()));
     connect(m_camera, SIGNAL(downloadFinished(bool)), this, SLOT(onAvpReady(bool)));
 
-    connect(m_reportConnection, SIGNAL(newImage(QPixmap*, bool)), this, SLOT(onNewImage(QPixmap*, bool)));
-    connect(m_reportConnection, SIGNAL(newResult(bool, unsigned char)), this, SLOT(onNewResult(bool, unsigned char)));
-    connect(m_reportConnection, SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_setupManager[i] = NULL;
+    }
+
+    {
+        m_reportConnection[0] = new ReportConnection(m_settings, 0, this);
+        connect(m_reportConnection[0], SIGNAL(newImage(QPixmap*, bool)), this, SLOT(onNewImage1(QPixmap*, bool)));
+        connect(m_reportConnection[0], SIGNAL(newResult(bool, unsigned char)), this, SLOT(onNewResult(bool, unsigned char)));
+        connect(m_reportConnection[0], SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
+    }
+    {
+        m_reportConnection[1] = new ReportConnection(m_settings, 1, this);
+        connect(m_reportConnection[1], SIGNAL(newImage(QPixmap*, bool)), this, SLOT(onNewImage2(QPixmap*, bool)));
+        connect(m_reportConnection[1], SIGNAL(newResult(bool, unsigned char)), this, SLOT(onNewResult(bool, unsigned char)));
+        connect(m_reportConnection[1], SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
+    }
+    {
+        m_reportConnection[2] = new ReportConnection(m_settings, 2, this);
+        connect(m_reportConnection[2], SIGNAL(newImage(QPixmap*, bool)), this, SLOT(onNewImage3(QPixmap*, bool)));
+        connect(m_reportConnection[2], SIGNAL(newResult(bool, unsigned char)), this, SLOT(onNewResult(bool, unsigned char)));
+        connect(m_reportConnection[2], SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
+    }
+    {
+        m_reportConnection[3] = new ReportConnection(m_settings, 3, this);
+        connect(m_reportConnection[3], SIGNAL(newImage(QPixmap*, bool)), this, SLOT(onNewImage4(QPixmap*, bool)));
+        connect(m_reportConnection[3], SIGNAL(newResult(bool, unsigned char)), this, SLOT(onNewResult(bool, unsigned char)));
+        connect(m_reportConnection[3], SIGNAL(newStatistics(QString)), this, SIGNAL(newStatistics(QString)));
+    }
+    {
+        m_reportConnection[4] = new ReportConnection(m_settings, 4, this);
+    }
+
+    connect(m_reportConnection[0], SIGNAL(newFailedImage(QPixmap*, int)), this, SLOT(onNewFailedImage(QPixmap*, int)));
+    connect(m_reportConnection[1], SIGNAL(newFailedImage(QPixmap*, int)), this, SLOT(onNewFailedImage(QPixmap*, int)));
+    connect(m_reportConnection[2], SIGNAL(newFailedImage(QPixmap*, int)), this, SLOT(onNewFailedImage(QPixmap*, int)));
+    connect(m_reportConnection[3], SIGNAL(newFailedImage(QPixmap*, int)), this, SLOT(onNewFailedImage(QPixmap*, int)));
 }
 
 /**
@@ -49,7 +81,10 @@ JobManager::JobManager(QSettings *settings, QObject *parent) : QObject(parent)
 JobManager::~JobManager() {
     cleanUp();
 
-    delete m_setupManager;
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        delete m_setupManager[i];
+    }
     delete m_job;
 }
 
@@ -57,8 +92,8 @@ JobManager::~JobManager() {
  * \brief JobManager::getGlobalDatums
  * \return
  */
-QList<DatumType> JobManager::getGlobalDatums() {
-    updateGlobalDatumValues();
+QList<DatumType> JobManager::getGlobalDatums(int inspectionId) {
+    updateGlobalDatumValues(inspectionId);
     return m_globalDatums->values();
 }
 
@@ -91,6 +126,8 @@ void JobManager::prepareDatums() {
         DatumType datumType;
         datumType.name = parts[0] + ":" + parts[1];
         datumType.label = parts[2];
+
+        qDebug() << "***************** Datum: " << datumType.name << ' ' << datumType.label;
 
         if (type.compare("double") == 0) {
             datumType.type = doubleType;
@@ -150,13 +187,15 @@ void JobManager::prepareDatums() {
 /*!
  * \brief JobManager::updateGlobalDatumValues
  */
-void JobManager::updateGlobalDatumValues() {
+void JobManager::updateGlobalDatumValues(int inspectionId) {
 
     QMap<QString, DatumType>::iterator i;
 
     for (i = m_globalDatums->begin(); i != m_globalDatums->end(); ++i) {
 
         QStringList parts = i.value().name.split(":");
+
+        qDebug() << "********************** Update Datums:";
 
         if (parts.length() < 2) {
             qCritical() << "Invalid code in global datums: " + i.value().name;
@@ -165,10 +204,10 @@ void JobManager::updateGlobalDatumValues() {
 
         switch (i.value().type) {
         case doubleType:
-            i.value().doubleValue = m_job->getAvpNumericParameter(parts[0], parts[1]).toDouble();
+            i.value().doubleValue = m_job->getAvpNumericParameter(inspectionId, parts[0], parts[1]).toDouble();
             break;
         case integerType:
-            i.value().intValue = m_job->getAvpNumericParameter(parts[0], parts[1]).toInt();
+            i.value().intValue = m_job->getAvpNumericParameter(inspectionId, parts[0], parts[1]).toInt();
             break;
         default:
             break;
@@ -192,7 +231,10 @@ void JobManager::tryOutSteps(QString stepPath) {
     QAxObject *step = system->querySubObject(QString("Find(\"" + stepPath + "\", 2)").toLatin1().data());
     if (step != NULL && ! step->isNull()) {
 
-        m_setupManager->tryOut(step);
+        for (int i = 0 ; i < 4 ; i ++)
+        {
+            m_setupManager[i]->tryOut(step);
+        }
 
         delete step;
     }
@@ -225,7 +267,10 @@ void JobManager::tryout(QString stepPath) {
     QAxObject *step = system->querySubObject(QString("Find(\"" + stepPath + "\", 2)").toLatin1().data());
     if (step != NULL && ! step->isNull()) {
 
-        m_setupManager->tryoutStep(step);
+        for (int i = 0 ; i < 4 ; i ++)
+        {
+            m_setupManager[i]->tryoutStep(step);
+        }
 
         delete step;
     }
@@ -242,9 +287,12 @@ void JobManager::deleteStep(QString stepPath) {
     QAxObject *step = system->querySubObject(QString("Find(\"" + stepPath + "\", 2)").toLatin1().data());
     if (step != NULL && ! step->isNull()) {
 
-        m_setupManager->disconnectJob();
-        m_job->deleteStep(step);
-        m_setupManager->connectJob(m_job->getSystemStep());
+        for (int i = 0 ; i < 4 ; i ++)
+        {
+            m_setupManager[i]->disconnectJob();
+            m_job->deleteStep(step);
+            m_setupManager[i]->connectJob(m_job->getSystemStep());
+        }
 
         delete step;
     }
@@ -417,13 +465,19 @@ void JobManager::cleanUp() {
     }
 
     // disconnect setup manager
-    if (m_setupManager != NULL) {
-        m_setupManager->cancelAcquireImage();
-        m_setupManager->disconnectJob();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL) {
+            m_setupManager[i]->cancelAcquireImage();
+            m_setupManager[i]->disconnectJob();
+        }
     }
 
     // disconnect reports
-    m_reportConnection->disconnectReport();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_reportConnection[i]->disconnectReport();
+    }
 
     //stop all inspections
     if (m_camera != NULL)
@@ -502,15 +556,28 @@ void JobManager::editMode() {
         qInfo() << "Entering AVP Edit Mode";
     }
 
-    m_reportConnection->disconnectReport();
-    m_camera->stopAllInspections();
-
-    if (m_setupManager == NULL) {
-        m_setupManager = new SetupManager(this);
-        connect(m_setupManager, SIGNAL(trainImageAcquired(QPixmap*)), this, SLOT(onTrainImageAcquired(QPixmap*)));
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_reportConnection[i]->disconnectReport();
+        m_camera->stopAllInspections();
     }
 
-    m_setupManager->connectJob(m_job->getSystemStep());
+    if (m_setupManager[0] == NULL) {
+            m_setupManager[0] = new SetupManager(0, this);
+            m_setupManager[1] = new SetupManager(1, this);
+            m_setupManager[2] = new SetupManager(2, this);
+            m_setupManager[3] = new SetupManager(3, this);
+            connect(m_setupManager[0], SIGNAL(trainImageAcquired(QPixmap*)), this, SLOT(onTrainImageAcquired1(QPixmap*)));
+            connect(m_setupManager[1], SIGNAL(trainImageAcquired(QPixmap*)), this, SLOT(onTrainImageAcquired2(QPixmap*)));
+            connect(m_setupManager[2], SIGNAL(trainImageAcquired(QPixmap*)), this, SLOT(onTrainImageAcquired3(QPixmap*)));
+            connect(m_setupManager[3], SIGNAL(trainImageAcquired(QPixmap*)), this, SLOT(onTrainImageAcquired4(QPixmap*)));
+    }
+
+    m_setupManager[0]->connectJob(m_job->getJobStep());
+    m_setupManager[1]->connectJob(m_job->getJobStep());
+    m_setupManager[2]->connectJob(m_job->getJobStep());
+    m_setupManager[3]->connectJob(m_job->getJobStep());
+
     m_editMode = true;
     m_runMode = false;
 }
@@ -529,21 +596,28 @@ void JobManager::runMode() {
     }
 
     // disconnect setup manager
-    if (m_setupManager != NULL) {
-        m_setupManager->cancelAcquireImage();
-        m_setupManager->disconnectJob();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL) {
+            m_setupManager[i]->cancelAcquireImage();
+            m_setupManager[i]->disconnectJob();
+        }
     }
 
-    // download the job again to the device
-    m_camera->download(m_job->getSystemStep());
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        // download the job again to the device
+        m_camera->download(m_job->getSystemStep());
 
-    // connect reports
-    m_reportConnection->connectReport(
-                m_camera->getDevice(),
-                m_job->getSystemStep(),
-                1,
-                m_batchConfiguration->getNoOfProducts()
-                );
+        // connect reports
+        m_reportConnection[i]->connectReport(
+                    m_camera->getDevice(),
+                    m_job->getSystemStep(),
+                    i + 1,
+                    m_batchConfiguration->getNoOfProducts()
+                    );
+    }
+
 
     m_runMode = true;
     m_editMode = false;
@@ -553,7 +627,11 @@ void JobManager::runMode() {
  * \brief JobManager::acquireImage
  */
 void JobManager::acquireImage() {
-    m_setupManager->acquireImage();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL)
+            m_setupManager[i]->acquireImage();
+    }
 }
 
 /*!
@@ -566,8 +644,14 @@ void JobManager::acquireStepImage(QString path, bool useOutput, bool showGraphic
     QAxObject *step = system->querySubObject(QString("Find(\"" + path + "\", 2)").toLatin1().data());
     if (step != NULL && ! step->isNull()) {
 
-        m_setupManager->selectStep(step);
-        m_setupManager->acquireStepImage(step, useOutput, showGraphics);
+        for (int i = 0 ; i < 4 ; i ++)
+        {
+            if (m_setupManager[i] != NULL)
+            {
+                m_setupManager[i]->selectStep(step);
+                m_setupManager[i]->acquireStepImage(step, useOutput, showGraphics);
+            }
+        }
 
         delete step;
     }
@@ -578,7 +662,13 @@ void JobManager::acquireStepImage(QString path, bool useOutput, bool showGraphic
  * \brief JobManager::acquireRootImage
  */
 void JobManager::acquireRootImage(bool showGraphics) {
-    m_setupManager->getImage(showGraphics);
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL)
+        {
+            m_setupManager[i]->getImage(showGraphics);
+        }
+    }
 }
 
 /*!
@@ -588,28 +678,46 @@ void JobManager::acquireRootImage(bool showGraphics) {
  * \return
  */
 int* JobManager::getImageHSI(int x, int y) {
-    return m_setupManager->getImageHSI(x, y);
+    return m_setupManager[0]->getImageHSI(x, y);
 }
 
 /*!
  * \brief JobManager::cancelAcquireImage
  */
 void JobManager::cancelAcquireImage() {
-    m_setupManager->cancelAcquireImage();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL)
+        {
+            m_setupManager[i]->cancelAcquireImage();
+        }
+    }
 }
 
 /*!
  * \brief JobManager::acquireStatus
  */
 bool JobManager::acquireStatus() {
-    return m_setupManager->acquireStatus();
+    return m_setupManager[0]->acquireStatus();
 }
 
 /**
  * @brief JobManager::onTrainImageAcquired
  */
-void JobManager::onTrainImageAcquired(QPixmap *image) {
-    emit trainImageAcquired(image);
+void JobManager::onTrainImageAcquired1(QPixmap *image) {
+    emit trainImageAcquired1(image);
+    emit trainReady();
+}
+void JobManager::onTrainImageAcquired2(QPixmap *image) {
+    emit trainImageAcquired2(image);
+    emit trainReady();
+}
+void JobManager::onTrainImageAcquired3(QPixmap *image) {
+    emit trainImageAcquired3(image);
+    emit trainReady();
+}
+void JobManager::onTrainImageAcquired4(QPixmap *image) {
+    emit trainImageAcquired4(image);
     emit trainReady();
 }
 
@@ -618,8 +726,20 @@ void JobManager::onTrainImageAcquired(QPixmap *image) {
  * \param image
  * \param result
  */
-void JobManager::onNewImage(QPixmap *image, bool result) {
-    emit newImage(image, result);
+void JobManager::onNewImage1(QPixmap *image, bool result) {
+    emit newImage1(image, result);
+    emit imageReady(result);
+}
+void JobManager::onNewImage2(QPixmap *image, bool result) {
+    emit newImage2(image, result);
+    emit imageReady(result);
+}
+void JobManager::onNewImage3(QPixmap *image, bool result) {
+    emit newImage3(image, result);
+    emit imageReady(result);
+}
+void JobManager::onNewImage4(QPixmap *image, bool result) {
+    emit newImage4(image, result);
     emit imageReady(result);
 }
 
@@ -627,7 +747,13 @@ void JobManager::onNewImage(QPixmap *image, bool result) {
  * @brief JobManager::getImage
  */
 void JobManager::getImage() {
-    m_setupManager->getImage();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL)
+        {
+            m_setupManager[i]->getImage();
+        }
+    }
 }
 
 /*!
@@ -661,7 +787,7 @@ void JobManager::onNewResult(bool result, unsigned char resultMask) {
  * \param code
  * \param value
  */
-void JobManager::setAvpNumericParam(QString code, int value) {
+void JobManager::setAvpNumericParam(int inspectionId, QString code, int value) {
 
     QVariant targetValue;
     double doubleValue;
@@ -695,7 +821,7 @@ void JobManager::setAvpNumericParam(QString code, int value) {
 
     qDebug() << "> Setting value to " + code + " " + targetValue.toString();
 
-    m_job->setAvpNumericParameter(parts[0], parts[1], targetValue);
+    m_job->setAvpNumericParameter(inspectionId, parts[0], parts[1], targetValue);
 }
 
 /*!
@@ -713,12 +839,24 @@ void JobManager::setDatumValue(QString stepPath, StepDatum stepDatum) {
  * \brief JobManager::regenerate
  */
 void JobManager::regenerate() {
-    m_setupManager->regenerate();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL)
+        {
+            m_setupManager[i]->regenerate();
+        }
+    }
     // m_job->regenerate();
 }
 
 void JobManager::refresh() {
-    m_setupManager->refresh();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        if (m_setupManager[i] != NULL)
+        {
+            m_setupManager[i]->refresh();
+        }
+    }
 }
 
 /*!
@@ -726,7 +864,7 @@ void JobManager::refresh() {
  * \param code
  * \return
  */
-QVariant JobManager::getAvpNumericParam(QString code) {
+QVariant JobManager::getAvpNumericParam(int inspectionId, QString code) {
 
     QVariant sourceValue, targetValue;
     double doubleValue;
@@ -743,7 +881,7 @@ QVariant JobManager::getAvpNumericParam(QString code) {
         return QVariant::fromValue(NULL);
     }
 
-    sourceValue = m_job->getAvpNumericParameter(parts[0], parts[1]);
+    sourceValue = m_job->getAvpNumericParameter(inspectionId, parts[0], parts[1]);
 
     if (m_globalDatums->contains(code)) {
 
@@ -776,4 +914,9 @@ void JobManager::setBatchConfiguration(BatchConfiguration *conf) {
     qDebug() << "Change batch configuration";
 
     m_batchConfiguration = new BatchConfiguration(conf, this);
+}
+
+void JobManager::onNewFailedImage(QPixmap *pix, int providerId) {
+    qDebug() << "***** NewFailedImage Reached : " << providerId;
+    emit newFailedImage(pix, providerId);
 }

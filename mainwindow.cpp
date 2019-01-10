@@ -37,8 +37,14 @@ MainWindow::MainWindow(QSettings *settings, QWidget *parent)
     m_jobManager = new JobManager(settings, this);
     m_jobManager->setBatchConfiguration(batchConfig);
 
-    m_bufferImageProvider = new BufferImageProvider(this);
-    m_trainImageProvider = new TrainImageProvider(this);
+    for (int i = 0 ; i < 5 ; i ++)
+    {
+        m_bufferImageProvider[i] = new BufferImageProvider(i, this);
+    }
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_trainImageProvider[i] = new TrainImageProvider(i, this);
+    }
 
     m_controller = new UIController(
                 configId,
@@ -50,8 +56,17 @@ MainWindow::MainWindow(QSettings *settings, QWidget *parent)
 
     m_uiBackend = new UIBackend(m_controller, settings, m_trainImageProvider, m_bufferImageProvider);
 
-    connect(m_jobManager, SIGNAL(trainImageAcquired(QPixmap*)), m_uiBackend->getTrainImageProvider(), SLOT(updatePixmap(QPixmap*)));
-    connect(m_jobManager, SIGNAL(newImage(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(), SLOT(appendPixmap(QPixmap*, bool)));
+    connect(m_jobManager, SIGNAL(trainImageAcquired1(QPixmap*)), m_uiBackend->getTrainImageProvider(0), SLOT(updatePixmap(QPixmap*)));
+    connect(m_jobManager, SIGNAL(trainImageAcquired2(QPixmap*)), m_uiBackend->getTrainImageProvider(1), SLOT(updatePixmap(QPixmap*)));
+    connect(m_jobManager, SIGNAL(trainImageAcquired3(QPixmap*)), m_uiBackend->getTrainImageProvider(2), SLOT(updatePixmap(QPixmap*)));
+    connect(m_jobManager, SIGNAL(trainImageAcquired4(QPixmap*)), m_uiBackend->getTrainImageProvider(3), SLOT(updatePixmap(QPixmap*)));
+
+    connect(m_jobManager, SIGNAL(newImage1(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(0), SLOT(appendPixmap(QPixmap*, bool)));
+    connect(m_jobManager, SIGNAL(newImage2(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(1), SLOT(appendPixmap(QPixmap*, bool)));
+    connect(m_jobManager, SIGNAL(newImage3(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(2), SLOT(appendPixmap(QPixmap*, bool)));
+    connect(m_jobManager, SIGNAL(newImage4(QPixmap*, bool)), m_uiBackend->getBufferImageProvider(3), SLOT(appendPixmap(QPixmap*, bool)));
+
+    connect(m_jobManager, SIGNAL(newFailedImage(QPixmap*,int)), m_uiBackend->getBufferImageProvider(4), SLOT(appendFailedPixmap(QPixmap*,int)));
     // -------------------------------------------------------------------
 
     // setup application close handler
@@ -74,8 +89,14 @@ MainWindow::~MainWindow()
     CoUninitialize();
 
     // delete objects (clean-up)
-    m_bufferImageProvider->deleteLater();
-    m_trainImageProvider->deleteLater();
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_bufferImageProvider[i]->deleteLater();
+    }
+    for (int i = 0 ; i < 4 ; i ++)
+    {
+        m_trainImageProvider[i]->deleteLater();
+    }
 
     // m_uiBackend->deleteLater();
     m_uiBackend->close();

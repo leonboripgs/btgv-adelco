@@ -477,16 +477,22 @@ void Job::walkJob(QList<StepProps> *stepList, walkCommand cmd) {
  * \param datumSym
  * \return
  */
-QVariant Job::getAvpNumericParameter(QString stepSym, QString datumSym) {
+QVariant Job::getAvpNumericParameter(int inspectionId, QString stepSym, QString datumSym) {
 
     QString cmd;
     QVariant variantValue = QVariant::fromValue(0);
 
     // find the step
     QAxObject *rootStep = getSystemStep();
+    QAxObject *insp[5];
+    insp[0] = getJobStep()->querySubObject("Find(\"Step.Inspection\", 0)");
+    insp[1] = insp[0]->querySubObject("Next()");
+    insp[2] = insp[1]->querySubObject("Next()");
+    insp[3] = insp[2]->querySubObject("Next()");
+    insp[4] = insp[3]->querySubObject("Next()");
 
     cmd = "Find(\"" + stepSym + "\", 0)";
-    QAxObject *step = rootStep->querySubObject(cmd.toLatin1().data());
+    QAxObject *step = insp[inspectionId]->querySubObject(cmd.toLatin1().data());
 
     if (step != NULL && ! step->isNull()) {
         // get the Datum
@@ -509,14 +515,20 @@ QVariant Job::getAvpNumericParameter(QString stepSym, QString datumSym) {
  * \param code
  * \param value
  */
-void Job::setAvpNumericParameter(QString stepSym, QString datumSym, QVariant value) {
+void Job::setAvpNumericParameter(int inspectionId, QString stepSym, QString datumSym, QVariant value) {
     QString cmd;
 
     // find the step
     QAxObject *rootStep = getSystemStep();
+    QAxObject *insp[5];
+    insp[0] = getJobStep()->querySubObject("Find(\"Step.Inspection\", 0)");
+    insp[1] = insp[0]->querySubObject("Next()");
+    insp[2] = insp[1]->querySubObject("Next()");
+    insp[3] = insp[2]->querySubObject("Next()");
+    insp[4] = insp[3]->querySubObject("Next()");
 
     cmd = "Find(\"" + stepSym + "\", 0)";
-    QAxObject *step = rootStep->querySubObject(cmd.toLatin1().data());
+    QAxObject *step = insp[inspectionId]->querySubObject(cmd.toLatin1().data());
 
     if (step != NULL && ! step->isNull()) {
         // get the Datum

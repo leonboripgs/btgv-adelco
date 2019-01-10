@@ -1,7 +1,8 @@
 #include "bufferimageprovider.h"
 
-BufferImageProvider::BufferImageProvider(QObject *parent) : QObject(parent), QQuickImageProvider(QQuickImageProvider::Pixmap)
+BufferImageProvider::BufferImageProvider( int providerId, QObject *parent) : QObject(parent), QQuickImageProvider(QQuickImageProvider::Pixmap)
 {
+    this->providerId = providerId;
     initializeFailedImages();
 }
 
@@ -26,6 +27,10 @@ void BufferImageProvider::initializeFailedImages() {
  */
 void BufferImageProvider::clearFailedImages() {
     initializeFailedImages();
+}
+
+int BufferImageProvider::getProviderId() {
+    return this->providerId;
 }
 
 /**
@@ -85,6 +90,7 @@ void BufferImageProvider::appendPixmap(QPixmap *input, bool result) {
     this->pixmap = QPixmap(*input);
 
     QString timeStamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    timeStamp += " Inspection" + QString::number(this->providerId + 1);
 
     QRect imgRect = this->pixmap.rect();
     int imgWidth = imgRect.width();
@@ -108,6 +114,37 @@ void BufferImageProvider::appendPixmap(QPixmap *input, bool result) {
     }
 
     emit newImage(result);
+}
+
+void BufferImageProvider::appendFailedPixmap(QPixmap *input, int inspectionId) {
+    qDebug() << "failed Image loaded" ;
+
+    this->imageBackup = QPixmap(this->pixmap);
+    this->pixmap = QPixmap(*input);
+
+    QString timeStamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    timeStamp += " Inspection" + QString::number(inspectionId + 1);
+
+    QRect imgRect = this->pixmap.rect();
+    int imgWidth = imgRect.width();
+    int imgHeight = imgRect.height();
+    int labelWidth = imgWidth/3;
+    int labelHeight = imgHeight/20;
+    int fontSize = imgHeight/50;
+
+    imgRect.setTopLeft(QPoint(imgWidth - labelWidth - 5, imgHeight - labelHeight -5));
+
+    QPainter painter(&this->pixmap);
+    painter.setBrush(QBrush(QColor(0, 0, 0, 128)));
+    painter.setFont(QFont("Arial", fontSize));
+    painter.drawRect(imgRect);
+    painter.setPen(QColor(255, 255, 255));
+    painter.drawText(imgRect, Qt::AlignCenter, timeStamp);
+
+    this->failedPixmaps.dequeue();
+    this->failedPixmaps.enqueue(this->pixmap);
+
+//    emit newImage(result);
 }
 
 /**

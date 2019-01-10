@@ -24,6 +24,8 @@ Item {
     property int    activeStepIndex:        -1      // holds the index of the selected step
     property bool   waitToRefreshStepImage: false   // used to force step image refresh (after a new image acquisition)
 
+    property int    trainingInspectionID:      1;
+
     // signals
     // -------------------------------------------------------------
     signal trainImageReady()
@@ -33,7 +35,7 @@ Item {
     function getSteps(withUpdate) {
         var stepsJson = uiController.getConfigurableSteps(withUpdate);
         symbolsModel = JSON.parse(stepsJson);
-
+        console.log(symbolsModel);
         // filter steps and add the original index as attribute
         var i = 0;
         topLevelModel = symbolsModel
@@ -138,7 +140,7 @@ Item {
 
         waitingImage = false;
         pathRNDSufix = "-" + Math.random(10);
-        imageInspect.source = "image://train/snapshot"  + pathRNDSufix;
+        imageInspect.source = "image://train" + trainingInspectionID + "/snapshot"  + pathRNDSufix;
     }
 
     // .............................................................
@@ -195,7 +197,7 @@ Item {
 
                     property string colorValueText
 
-                    source: "image://train/snapshot"  + pathRNDSufix;
+                    source: "image://train" + trainingInspectionID + "/snapshot"  + pathRNDSufix;
 
                     BusyIndicator {
                         id: waitIndicator
@@ -215,12 +217,77 @@ Item {
                     height: _uimButtonHeight
 
                     Button {
-                        Layout.preferredHeight: _uimButtonHeight
+                        id: requestInspection1
+                        iconSource: trainingInspectionID == 1 ? "../images/cam1_active.png" : "../images/cam1.png"
                         style: BlackButtonStyle {}
-                        text: "Request Image"
+                        Layout.preferredHeight: _uimButtonHeight
 
                         onClicked: {
                             waitingImage = true;
+                            trainingInspectionID = 1;
+
+                            if (activeStep && (activeStep.useInputImage || activeStep.useOutputImage) ) {
+                                // acquire new image and when it comes require the step input image
+                                acquireAndRefreshStepImage(activeStep && activeStep.showGraphics );
+                            }
+                            else {
+                                uiController.acquireImage( activeStep && activeStep.showGraphics );
+                            }
+
+                            uiController.startTest(6);
+                        }
+                    }
+                    Button {
+                        id: requestInspection2
+                        style: BlackButtonStyle {}
+                        iconSource: trainingInspectionID == 2 ? "../images/cam2_active.png" : "../images/cam2.png"
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            waitingImage = true;
+                            trainingInspectionID = 2;
+
+                            if (activeStep && (activeStep.useInputImage || activeStep.useOutputImage) ) {
+                                // acquire new image and when it comes require the step input image
+                                acquireAndRefreshStepImage(activeStep && activeStep.showGraphics );
+                            }
+                            else {
+                                uiController.acquireImage( activeStep && activeStep.showGraphics );
+                            }
+
+                            uiController.startTest(6);
+                        }
+                    }
+                    Button {
+                        id: requestInspection3
+                        style: BlackButtonStyle {}
+                        iconSource: trainingInspectionID == 3 ? "../images/cam3_active.png" : "../images/cam3.png"
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            waitingImage = true;
+                            trainingInspectionID = 3;
+
+                            if (activeStep && (activeStep.useInputImage || activeStep.useOutputImage) ) {
+                                // acquire new image and when it comes require the step input image
+                                acquireAndRefreshStepImage(activeStep && activeStep.showGraphics );
+                            }
+                            else {
+                                uiController.acquireImage( activeStep && activeStep.showGraphics );
+                            }
+
+                            uiController.startTest(6);
+                        }
+                    }
+                    Button {
+                        id: requestInspection4
+                        iconSource: trainingInspectionID == 4 ? "../images/cam4_active.png" : "../images/cam4.png"
+                        style: BlackButtonStyle {}
+                        Layout.preferredHeight: _uimButtonHeight
+
+                        onClicked: {
+                            waitingImage = true;
+                            trainingInspectionID = 4;
 
                             if (activeStep && (activeStep.useInputImage || activeStep.useOutputImage) ) {
                                 // acquire new image and when it comes require the step input image
@@ -237,6 +304,7 @@ Item {
                         id: zoomfit
                         iconSource: "../images/zoomfit.png"
                         style: BlackButtonStyle { }
+                        Layout.leftMargin: 30
                         Layout.preferredHeight: _uimButtonHeight
                         onClicked: {
                             imageInspect.zoomToFit();

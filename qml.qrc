@@ -57,5 +57,13 @@
         <file>qml/TopMenu.qml</file>
         <file>qml/TouchTabViewStyle.qml</file>
         <file>images/logo.png</file>
+        <file>images/cam1.png</file>
+        <file>images/cam2.png</file>
+        <file>images/cam3.png</file>
+        <file>images/cam4.png</file>
+        <file>images/cam1_active.png</file>
+        <file>images/cam2_active.png</file>
+        <file>images/cam3_active.png</file>
+        <file>images/cam4_active.png</file>
     </qresource>
 </RCC>

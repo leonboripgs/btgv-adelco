@@ -12,6 +12,7 @@ Item {
     // -------------------------------------------------------------
     property bool   imagesPaused: false
     property string pathRNDSufix: ""
+    property int fullScreenMode: 1
     property string pathFailRNDSufix: ""
     property double _FIRSTCOLPERC: 0.6
 
@@ -48,6 +49,7 @@ Item {
         if (!passed) {
             pathFailRNDSufix = "-" + Math.random(10);
         }
+        console.log("update Image");
     }
 
     // .............................................................
@@ -122,76 +124,117 @@ Item {
                     border.color: "#666666"
                     border.width: 1
                     Layout.alignment: Qt.AlignCenter
+                    Layout.margins: 10
 
                     RowLayout {
-                        spacing: 10
-                        anchors.margins: 10
+                        spacing: 0
                         RowLayout {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            Layout.alignment: Qt.AlignVCenter
                             ColumnLayout {
-                                Image {
-                                    id: inspectedSample1
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
-                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
+                                spacing: 0
+                                    Image {
+                                        id: inspectedSample1
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.preferredWidth: imagewrapper.width * 0.5
+                                        Layout.preferredHeight: imagewrapper.height * 0.5
 
-                                    cache: false
-                                    asynchronous: false
-                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
-                                    fillMode: Image.Stretch
-                                    mipmap: true
-                                }
+                                        cache: false
+                                        asynchronous: false
+                                        source: "image://buffer1/snapshot" + mainPanel.pathRNDSufix
+                                        fillMode: Image.Stretch
+                                        mipmap: true
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                fullScreenMode = 1;
+                                                inspectedSample1.visible = false;
+                                                inspectedSample2.visible = false;
+                                                inspectedSample3.visible = false;
+                                                inspectedSample4.visible = false;
+                                                fullScreen.visible = true;
+                                            }
+                                        }
+                                    }
                                 Image {
                                     id: inspectedSample2
                                     Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
-                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
+                                    Layout.preferredWidth: imagewrapper.width * 0.5
+                                    Layout.preferredHeight: imagewrapper.height * 0.5
 
                                     cache: false
                                     asynchronous: false
 
-                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    source: "image://buffer2/snapshot" + mainPanel.pathRNDSufix
                                     fillMode: Image.Stretch
                                     mipmap: true
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            fullScreenMode = 2;
+                                            inspectedSample1.visible = false;
+                                            inspectedSample2.visible = false;
+                                            inspectedSample3.visible = false;
+                                            inspectedSample4.visible = false;
+                                            fullScreen.visible = true;
+                                        }
+                                    }
                                 }
-
                             }
                         }
-
                         RowLayout {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            Layout.alignment: Qt.AlignVCenter
                             ColumnLayout {
+                                spacing: 0
                                 Image {
                                     id: inspectedSample3
                                     Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
-                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
+                                    Layout.preferredWidth: imagewrapper.width * 0.5
+                                    Layout.preferredHeight: imagewrapper.height * 0.5
 
                                     cache: false
                                     asynchronous: false
 
-                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    source: "image://buffer3/snapshot" + mainPanel.pathRNDSufix
                                     fillMode: Image.Stretch
                                     mipmap: true
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            fullScreenMode = 3;
+                                            inspectedSample1.visible = false;
+                                            inspectedSample2.visible = false;
+                                            inspectedSample3.visible = false;
+                                            inspectedSample4.visible = false;
+                                            fullScreen.visible = true;
+                                        }
+                                    }
                                 }
                                 Image {
                                     id: inspectedSample4
                                     Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: imagewrapper.width * 0.5 - 10
-                                    Layout.preferredHeight: imagewrapper.height * 0.5 - 10
+                                    Layout.preferredWidth: imagewrapper.width * 0.5
+                                    Layout.preferredHeight: imagewrapper.height * 0.5
 
                                     cache: false
                                     asynchronous: false
 
-                                    source: "image://buffer/snapshot" + mainPanel.pathRNDSufix
+                                    source: "image://buffer4/snapshot" + mainPanel.pathRNDSufix
                                     fillMode: Image.Stretch
                                     mipmap: true
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            fullScreenMode = 4;
+                                            inspectedSample1.visible = false;
+                                            inspectedSample2.visible = false;
+                                            inspectedSample3.visible = false;
+                                            inspectedSample4.visible = false;
+                                            fullScreen.visible = true;
+                                        }
+                                    }
                                 }
-
                             }
                         }
 
@@ -209,6 +252,31 @@ Item {
                         fillMode: Image.PreserveAspectFit
                         mipmap: true
                         visible: false
+                    }
+                    Image {
+                        id: fullScreen
+
+                        anchors.fill: parent
+                        anchors.margins: 5
+
+                        cache: false
+                        asynchronous: false
+
+                        fillMode: Image.PreserveAspectFit
+                        mipmap: true
+                        visible: false
+                        source: "image://buffer" + mainPanel.fullScreenMode +"/snapshot" + mainPanel.pathRNDSufix
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                fullScreen.visible = false;
+                                fullScreenMode = 1;
+                                inspectedSample1.visible = true;
+                                inspectedSample2.visible = true;
+                                inspectedSample3.visible = true;
+                                inspectedSample4.visible = true;
+                            }
+                        }
                     }
 
                 }
@@ -241,10 +309,10 @@ Item {
                         onClicked: {
                             imagesPaused = false;
                             previewSample.visible = false;
-//                            inspectedSample1.visible = true;
-//                            inspectedSample2.visible = true;
-//                            inspectedSample3.visible = true;
-//                            inspectedSample4.visible = true;
+                            inspectedSample1.visible = true;
+                            inspectedSample2.visible = true;
+                            inspectedSample3.visible = true;
+                            inspectedSample4.visible = true;
                             imageUpdated(false);
                             imagewrapper.border.color = "#666666";
                         }
@@ -354,7 +422,12 @@ Item {
                                         imageUpdated(false);
                                         previewSample.source = parent.source;
                                         previewSample.visible = true;
+                                        inspectedSample1.visible = false;
+                                        inspectedSample2.visible = false;
+                                        inspectedSample3.visible = false;
+                                        inspectedSample4.visible = false;
                                         imagewrapper.border.color = "#ff6666";
+                                        console.log(parent.source);
                                     }
                                 }
                             }
